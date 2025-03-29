@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.util.fadingEdge
@@ -84,7 +86,7 @@ fun <T> Picker(
         if (isInfinity) {
             listScrollMiddle - listScrollMiddle % adjustedItems.size - visibleItemsMiddle + startIndex
         } else {
-            startIndex + 1
+            startIndex
         }
     }
 
@@ -112,7 +114,7 @@ fun <T> Picker(
             modifier = Modifier
                 .align(Alignment.Center)
                 .wrapContentSize()
-                .height(itemHeight * visibleItemsCount)
+                .height(itemHeight * 3)
                 .fadingEdge(fadingEdgeGradient)
         ) {
             items(
@@ -135,6 +137,8 @@ fun <T> Picker(
                 val currentItemText by remember {
                     mutableStateOf(if (getItem(index) == null) "" else getItem(index).toString())
                 }
+
+                Log.d("Picker", "Index: $index, Text: $currentItemText")
 
                 Text(
                     text = currentItemText,
@@ -159,7 +163,10 @@ fun <T> Picker(
                         .wrapContentWidth()
                         .then(textModifier)
                         .noRippleClickable {
-                            Log.d("Picker", "Clicked on $index item: ${getItem(index)}")
+                            //Log.d("Picker", "Clicked on $index item: ${getItem(index)}")
+                            if(!isInfinity && (index == 0 || index == listScrollCount - 1)) {
+                                return@noRippleClickable
+                            }
                             coroutineScope.launch {
                                 listState.animateScrollToItem(index = index - 1)
                             }
@@ -176,14 +183,16 @@ fun <T> Picker(
 fun PickerPreView() {
     MyAlarmTheme {
         Picker(
-            items = (0..12).toList(),
-            state = PickerState(6),
-            visibleItemsCount = 3,
-            fadingEdgeGradient = Brush.verticalGradient(
-                0f to Color.Transparent,
-                0.5f to Color.Black,
-                1f to Color.Transparent
-            )
+            modifier = Modifier
+                .width(60.dp)
+                .height(120.dp),
+            items = listOf("오전", " 오후"),
+            state = PickerState(0),
+            startIndex = 0,
+            textStyle = TextStyle(fontSize = 24.sp),
+            selectedTextStyle = TextStyle(fontSize = 24.sp),
+            visibleItemsCount = 2,
+            isInfinity = false
         )
     }
 }
