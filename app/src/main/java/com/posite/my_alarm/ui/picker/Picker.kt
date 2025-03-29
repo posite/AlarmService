@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -91,7 +92,6 @@ fun <T> Picker(
     }
 
     fun getItem(index: Int) = adjustedItems[index % adjustedItems.size]
-
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
@@ -138,7 +138,7 @@ fun <T> Picker(
                     mutableStateOf(if (getItem(index) == null) "" else getItem(index).toString())
                 }
 
-                Log.d("Picker", "Index: $index, Text: $currentItemText")
+                //Log.d("Picker", "Index: $index, Text: $currentItemText")
 
                 Text(
                     text = currentItemText,
@@ -192,7 +192,7 @@ fun PickerPreView() {
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 2,
-            isInfinity = false
+            isInfinity = false,
         )
     }
 }
