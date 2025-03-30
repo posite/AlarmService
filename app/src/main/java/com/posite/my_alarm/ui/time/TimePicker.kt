@@ -66,7 +66,7 @@ fun TimePicker(
 
         Picker(
             modifier = Modifier.width(40.dp),
-            items = (0..60).map { stringResource(R.string.number_format, it) }.toList(),
+            items = (0..59).map { stringResource(R.string.number_format, it) }.toList(),
             state = minuteState,
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
