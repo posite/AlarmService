@@ -138,6 +138,30 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+        deviceId: Int
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults, deviceId)
+        val deniedPermissions = mutableListOf<String>()
+        if (requestCode == 1000) {
+            for ((index, result) in grantResults.withIndex()) {
+                if (result == PackageManager.PERMISSION_DENIED) {
+                    deniedPermissions.add(permissions[index])
+                }
+            }
+        }
+
+        if (deniedPermissions.isNotEmpty()) {
+            Toast.makeText(this, "알림 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            requestPermissions(deniedPermissions.toTypedArray(), 1000)
+        } else {
+            Log.d("MainActivity", "onRequestPermissionsResult: $permissions")
+        }
+    }
 }
 
 
