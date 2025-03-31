@@ -1,11 +1,13 @@
 package com.posite.my_alarm
 
+import android.Manifest.permission
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.icu.util.Calendar
 import android.os.Build
 import android.os.Bundle
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.ui.time.TimePickerDialog
@@ -37,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 startActivity(intent)
             }
         }
+        askNotificationPermission()
         setContent {
             val context = LocalContext.current
 
@@ -121,6 +125,18 @@ class MainActivity : ComponentActivity() {
     private fun removeAlarm(intent: PendingIntent) {
         alarmManager.cancel(intent)
         intent.cancel()
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(permission.POST_NOTIFICATIONS), 1000)
+            }
+        }
     }
 }
 
