@@ -1,6 +1,7 @@
-package com.posite.my_alarm
+package com.posite.my_alarm.ui.main
 
 import android.Manifest.permission
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -9,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.icu.util.Calendar
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -16,8 +18,13 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
@@ -31,6 +38,8 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val alarmManager by lazy { getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         //enableEdgeToEdge()
@@ -41,6 +50,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         askNotificationPermission()
+
+        if (alertPermissionCheck(this)) {
+            onObtainingPermissionOverlayWindow(this)
+        }
+
         setContent {
             val context = LocalContext.current
 
@@ -50,8 +64,14 @@ class MainActivity : ComponentActivity() {
                 val meridiemState = remember { PickerState("오전") }
                 val hourState = remember { PickerState(0) }
                 val minuteState = remember { PickerState("00") }
+                Scaffold(modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color.White)) {
+
+                }
                 if (isShowTimePicker.value) {
                     TimePickerDialog(
+                        modifier = Modifier.background(color = Color.White),
                         properties = DialogProperties(
                             dismissOnBackPress = true,
                             dismissOnClickOutside = true,
@@ -84,7 +104,6 @@ class MainActivity : ComponentActivity() {
                         minuteState = minuteState
                     )
                 }
-
             }
         }
     }
@@ -137,6 +156,19 @@ class MainActivity : ComponentActivity() {
                 requestPermissions(arrayOf(permission.POST_NOTIFICATIONS), 1000)
             }
         }
+    }
+
+    private fun onObtainingPermissionOverlayWindow(context: Activity) {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:" + context.packageName)
+        )
+        context.startActivityForResult(intent, 0)
+    }
+
+
+    fun alertPermissionCheck(context: Context?): Boolean {
+        return !Settings.canDrawOverlays(context)
     }
 
     override fun onRequestPermissionsResult(

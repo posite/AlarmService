@@ -1,4 +1,4 @@
-package com.posite.my_alarm.ui.theme
+package com.posite.my_alarm.ui.lock.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,9 +23,8 @@ private val LightColorScheme = lightColorScheme(
     secondary = Color.White,
     tertiary = Color.White,
     background = Color.White
-
     /* Other default colors to override
-    background = Color(0xFFFFFBFE),
+    ,
     surface = Color(0xFFFFFBFE),
     onPrimary = Color.White,
     onSecondary = Color.White,

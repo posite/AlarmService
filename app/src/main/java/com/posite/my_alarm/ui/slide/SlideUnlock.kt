@@ -1,6 +1,5 @@
 package com.posite.my_alarm.ui.slide
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -10,8 +9,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +46,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SwipeUnlockButton(
     modifier: Modifier = Modifier,
+    onSwipe: () -> Unit = {},
 ) {
     var componentSize by remember {
         mutableStateOf(IntSize.Zero)
@@ -84,6 +82,7 @@ fun SwipeUnlockButton(
 
         if (state.offset > componentSize.width.toFloat() / 2) {
             swipeText = "잠금 해제 완료"
+            onSwipe()
         } else {
             swipeText = "밀어서 잠금 해제"
         }
