@@ -18,19 +18,38 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
+import com.posite.my_alarm.ui.alarm.Alarm
+import com.posite.my_alarm.ui.picker.TimePickerDialog
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
-import com.posite.my_alarm.ui.time.TimePickerDialog
 import com.posite.my_alarm.util.AlarmReceiver
 import com.posite.my_alarm.util.AlarmReceiver.Companion.TAG
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +57,8 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val alarmManager by lazy { getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+
+    private val viewModel by viewModels<MainViewModel>()
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,55 +75,111 @@ class MainActivity : ComponentActivity() {
         if (alertPermissionCheck(this)) {
             onObtainingPermissionOverlayWindow(this)
         }
-
+        viewModel.getAlarmList()
         setContent {
             val context = LocalContext.current
 
             (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
             MyAlarmTheme {
-                val isShowTimePicker = remember { mutableStateOf(true) }
-                val meridiemState = remember { PickerState("오전") }
-                val hourState = remember { PickerState(0) }
-                val minuteState = remember { PickerState("00") }
-                Scaffold(modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = Color.White)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = Color.White)
+                ) {
+                    val isShowTimePicker = remember { mutableStateOf(false) }
+                    val meridiemState = remember { PickerState("오전") }
+                    val hourState = remember { PickerState(0) }
+                    val minuteState = remember { PickerState("00") }
 
-                }
-                if (isShowTimePicker.value) {
-                    TimePickerDialog(
-                        modifier = Modifier.background(color = Color.White),
-                        properties = DialogProperties(
-                            dismissOnBackPress = true,
-                            dismissOnClickOutside = true,
-                        ),
-                        onDismissRequest = { isShowTimePicker.value = false },
-                        onDoneClickListener = {
-                            isShowTimePicker.value = false
-                            Toast.makeText(
-                                this,
-                                "${meridiemState.selectedItem} ${hourState.selectedItem}시 ${minuteState.selectedItem}분",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            val alarmIntent =
-                                Intent(this, AlarmReceiver::class.java).putExtra(TAG, 0)
-                                    .let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            this, 0, intent,
-                                            PendingIntent.FLAG_IMMUTABLE
-                                        )
-                                    }
-                            addAlarm(
-                                meridiemState = meridiemState.selectedItem,
-                                hourState = hourState.selectedItem,
-                                minuteState = minuteState.selectedItem,
-                                intent = alarmIntent
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp, 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "알람", fontSize = 20.sp, fontWeight = Bold)
+                        IconButton(
+                            modifier = Modifier.background(
+                                shape = CircleShape,
+                                color = Color.White
+                            ),
+                            onClick = { isShowTimePicker.value = true }
+                        ) {
+                            Icon(
+                                modifier = Modifier.padding(8.dp),
+                                tint = Color.Black,
+                                contentDescription = "Add",
+                                imageVector = Icons.Default.Add
                             )
-                        },
-                        meridiemState = meridiemState,
-                        hourState = hourState,
-                        minuteState = minuteState
-                    )
+                        }
+                    }
+                    LazyColumn(modifier = Modifier.padding(12.dp, 0.dp)) {
+                        items(viewModel.currentState.alarmList) { item ->
+                            Alarm(alarm = item) {
+                                if (it.not()) {
+                                    removeAlarm(
+                                        Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
+                                            .let { intent ->
+                                                PendingIntent.getBroadcast(
+                                                    context,
+                                                    item.id.toInt(),
+                                                    intent,
+                                                    PendingIntent.FLAG_IMMUTABLE
+                                                )
+                                            }
+                                    )
+                                }
+                                viewModel.updateAlarmState(item.copy(isActive = item.isActive.not()))
+                                Log.d("MainActivity", viewModel.currentState.alarmList.toString())
+                            }
+                        }
+                    }
+                    if (isShowTimePicker.value) {
+                        TimePickerDialog(
+                            modifier = Modifier.background(color = Color.White),
+                            properties = DialogProperties(
+                                dismissOnBackPress = true,
+                                dismissOnClickOutside = true,
+                            ),
+                            onDismissRequest = { isShowTimePicker.value = false },
+                            onDoneClickListener = {
+                                isShowTimePicker.value = false
+                                Toast.makeText(
+                                    context,
+                                    "${meridiemState.selectedItem} ${hourState.selectedItem}시 ${minuteState.selectedItem}분",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                viewModel.insertAlarmState(
+                                    AlarmStateEntity(
+                                        hour = hourState.selectedItem,
+                                        minute = minuteState.selectedItem.toInt(),
+                                        meridiem = meridiemState.selectedItem,
+                                        isActive = true
+                                    )
+                                )
+                                val alarmIntent =
+                                    Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
+                                        .let { intent ->
+                                            PendingIntent.getBroadcast(
+                                                context,
+                                                viewModel.currentState.alarmList.last().id.toInt(),
+                                                intent,
+                                                PendingIntent.FLAG_IMMUTABLE
+                                            )
+                                        }
+                                addAlarm(
+                                    meridiemState = meridiemState.selectedItem,
+                                    hourState = hourState.selectedItem,
+                                    minuteState = minuteState.selectedItem,
+                                    intent = alarmIntent
+                                )
+                            },
+                            meridiemState = meridiemState,
+                            hourState = hourState,
+                            minuteState = minuteState
+                        )
+                    }
                 }
             }
         }
@@ -142,7 +219,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun removeAlarm(intent: PendingIntent) {
-        alarmManager.cancel(intent)
         intent.cancel()
     }
 
@@ -195,25 +271,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun PreviewPicker() {
-//    MyAlarmTheme {
-//        TimePickerDialog(
-//            properties = DialogProperties(
-//                dismissOnBackPress = true,
-//                dismissOnClickOutside = true,
-//            ),
-//            onDismissRequest = {},
-//            onDoneClickListener = {
-//
-//            },
-//            meridiemState = PickerState("오전"),
-//            hourState = PickerState(6),
-//            minuteState = PickerState("00")
-//        )
-//    }
-//}
 

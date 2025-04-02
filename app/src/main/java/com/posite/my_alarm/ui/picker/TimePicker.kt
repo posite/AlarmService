@@ -1,4 +1,4 @@
-package com.posite.my_alarm.ui.time
+package com.posite.my_alarm.ui.picker
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.model.PickerState
-import com.posite.my_alarm.ui.picker.Picker
 
 @Composable
 fun TimePicker(

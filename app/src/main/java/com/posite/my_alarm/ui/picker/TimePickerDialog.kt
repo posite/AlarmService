@@ -1,4 +1,4 @@
-package com.posite.my_alarm.ui.time
+package com.posite.my_alarm.ui.picker
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,10 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
-import java.time.LocalDateTime
 
 
 @Composable
