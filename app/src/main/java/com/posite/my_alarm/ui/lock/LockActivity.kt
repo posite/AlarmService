@@ -90,7 +90,7 @@ class LockActivity : ComponentActivity() {
                         )
                     }
                     SwipeUnlockButton() {
-                        finishAffinity()
+                        finish()
                     }
                 }
             }
