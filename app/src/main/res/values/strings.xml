@@ -3,4 +3,5 @@
     <string name="number_format">"%02d"</string>
     <string name="title_activity_lock">LockActivity</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="alarm_time">"%d:%02d"</string>
 </resources>

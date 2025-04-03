@@ -9,24 +9,20 @@ class MainContract {
     sealed class MainEvent : UiEvent {
         data object GetAlarmList : MainEvent()
         data class GetAlarmState(val id: Long) : MainEvent()
-        data class InsertAlarmState(val alarm: AlarmStateEntity) : MainEvent()
-        data class UpdateAlarmState(val alarm: AlarmStateEntity) : MainEvent()
-        data class DeleteAlarmState(val alarm: AlarmStateEntity) : MainEvent()
-    }
-
-    sealed class MainState {
-        data class AlarmList(val alarmList: List<AlarmStateEntity>) : MainState()
-        data class SelectedAlarm(val alarm: AlarmStateEntity) : MainState()
+        data class InsertAlarm(val alarm: AlarmStateEntity) : MainEvent()
+        data class UpdateAlarm(val alarm: AlarmStateEntity) : MainEvent()
+        data class DeleteAlarm(val alarm: AlarmStateEntity) : MainEvent()
     }
 
     data class MainUiState(
         val alarmList: List<AlarmStateEntity> = emptyList(),
-        val selectedAlarm: AlarmStateEntity? = null
+        val selectedAlarm: AlarmStateEntity? = null,
     ) : UiState
 
     sealed class MainEffect : UiEffect {
         data class ShowToast(val message: String) : MainEffect()
         data class ShowAlarmDetails(val alarm: AlarmStateEntity) : MainEffect()
         data object NavigateToAlarmList : MainEffect()
+        data class ItemInserted(val isSuccess: Boolean) : MainEffect()
     }
 }

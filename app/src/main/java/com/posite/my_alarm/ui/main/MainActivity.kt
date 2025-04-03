@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -45,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.alarm.Alarm
@@ -53,6 +57,8 @@ import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.util.AlarmReceiver
 import com.posite.my_alarm.util.AlarmReceiver.Companion.TAG
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -76,9 +82,15 @@ class MainActivity : ComponentActivity() {
             onObtainingPermissionOverlayWindow(this)
         }
         viewModel.getAlarmList()
+        onEffect()
         setContent {
             val context = LocalContext.current
-
+            val isShowTimePicker = remember { mutableStateOf(false) }
+            val meridiemState = remember { PickerState("오전") }
+            val hourState = remember { PickerState(0) }
+            val minuteState = remember { PickerState("00") }
+            val isDeleteMode = remember { mutableStateOf(false) }
+            val set = mutableSetOf<AlarmStateEntity>()
             (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
             MyAlarmTheme {
                 Column(
@@ -86,11 +98,6 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(color = Color.White)
                 ) {
-                    val isShowTimePicker = remember { mutableStateOf(false) }
-                    val meridiemState = remember { PickerState("오전") }
-                    val hourState = remember { PickerState(0) }
-                    val minuteState = remember { PickerState("00") }
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -98,25 +105,59 @@ class MainActivity : ComponentActivity() {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "알람", fontSize = 20.sp, fontWeight = Bold)
+                        Text(
+                            text = if (isDeleteMode.value) "삭제" else "알람",
+                            fontSize = 20.sp,
+                            fontWeight = Bold
+                        )
                         IconButton(
                             modifier = Modifier.background(
                                 shape = CircleShape,
-                                color = Color.White
+                                color = Color.Transparent
                             ),
-                            onClick = { isShowTimePicker.value = true }
+                            onClick = {
+                                if (isDeleteMode.value) {
+                                    Log.d("MainActivity", "set: $set")
+                                    for (alarm in set) {
+                                        removeAlarm(
+                                            Intent(
+                                                context,
+                                                AlarmReceiver::class.java
+                                            ).let { intent ->
+                                                PendingIntent.getBroadcast(
+                                                    context,
+                                                    alarm.id.toInt(),
+                                                    intent,
+                                                    PendingIntent.FLAG_IMMUTABLE
+                                                )
+                                            }
+                                        )
+                                        viewModel.deleteAlarmState(alarm)
+                                    }
+                                    set.clear()
+                                    isDeleteMode.value = false
+                                } else {
+                                    isShowTimePicker.value = true
+                                }
+                            }
                         ) {
                             Icon(
                                 modifier = Modifier.padding(8.dp),
                                 tint = Color.Black,
                                 contentDescription = "Add",
-                                imageVector = Icons.Default.Add
+                                imageVector = if (isDeleteMode.value) Icons.Default.Delete else Icons.Default.Add
                             )
                         }
                     }
                     LazyColumn(modifier = Modifier.padding(12.dp, 0.dp)) {
                         items(viewModel.currentState.alarmList) { item ->
-                            Alarm(alarm = item) {
+                            Alarm(alarm = item, isDeleteMode = isDeleteMode, onAlarmSelected = {
+                                set.add(item)
+                                Log.d("MainActivity", "set: $set")
+                            }, onAlarmUnselected = {
+                                set.remove(it)
+                                Log.d("MainActivity", "set: $set")
+                            }, onSwitchChanges = {
                                 if (it.not()) {
                                     removeAlarm(
                                         Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
@@ -132,7 +173,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 viewModel.updateAlarmState(item.copy(isActive = item.isActive.not()))
                                 Log.d("MainActivity", viewModel.currentState.alarmList.toString())
-                            }
+                            })
                         }
                     }
                     if (isShowTimePicker.value) {
@@ -158,27 +199,42 @@ class MainActivity : ComponentActivity() {
                                         isActive = true
                                     )
                                 )
-                                val alarmIntent =
-                                    Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
-                                        .let { intent ->
-                                            PendingIntent.getBroadcast(
-                                                context,
-                                                viewModel.currentState.alarmList.last().id.toInt(),
-                                                intent,
-                                                PendingIntent.FLAG_IMMUTABLE
-                                            )
-                                        }
-                                addAlarm(
-                                    meridiemState = meridiemState.selectedItem,
-                                    hourState = hourState.selectedItem,
-                                    minuteState = minuteState.selectedItem,
-                                    intent = alarmIntent
-                                )
                             },
                             meridiemState = meridiemState,
                             hourState = hourState,
                             minuteState = minuteState
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onEffect() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.effect.collect {
+                    when (it) {
+                        is MainContract.MainEffect.ItemInserted -> {
+                            if (it.isSuccess.not() || viewModel.currentState.alarmList.isEmpty()) {
+                                delay(1000)
+                            }
+                            val intent = Intent(this@MainActivity, AlarmReceiver::class.java)
+                            val pendingIntent = PendingIntent.getBroadcast(
+                                this@MainActivity,
+                                viewModel.currentState.alarmList.last().id.toInt(),
+                                intent,
+                                PendingIntent.FLAG_IMMUTABLE
+                            )
+                            addAlarm(
+                                viewModel.currentState.alarmList.last().meridiem,
+                                viewModel.currentState.alarmList.last().hour,
+                                viewModel.currentState.alarmList.last().minute.toString(),
+                                pendingIntent
+                            )
+                        }
+
+                        else -> {}
                     }
                 }
             }
@@ -219,6 +275,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun removeAlarm(intent: PendingIntent) {
+        alarmManager.cancel(intent)
         intent.cancel()
     }
 

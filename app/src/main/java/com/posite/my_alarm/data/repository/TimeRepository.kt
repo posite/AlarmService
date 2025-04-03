@@ -18,9 +18,11 @@ class TimeRepository @Inject constructor(private val timeDao: AlarmStateDao) {
         }
     }
 
-    suspend fun addTime(time: AlarmStateEntity) = timeDao.insertAlarmState(time)
+    suspend fun addAlarm(time: AlarmStateEntity) = timeDao.insertAlarmState(time)
 
-    suspend fun updateTime(alarm: AlarmStateEntity) = timeDao.updateAlarmState(alarm)
+    suspend fun updateAlarm(alarm: AlarmStateEntity) = timeDao.updateAlarmState(alarm)
 
-    suspend fun deleteTime(alarm: AlarmStateEntity) = timeDao.deleteAlarmState(alarm)
+    suspend fun deleteAlarms(alarm: AlarmStateEntity) = timeDao.deleteAlarmState(alarm)
+
+    suspend fun deleteAlarms(alarms: List<AlarmStateEntity>) = timeDao.deleteAlarmStates(alarms)
 }

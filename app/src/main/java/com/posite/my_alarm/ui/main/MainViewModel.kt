@@ -5,6 +5,9 @@ import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.repository.TimeRepository
 import com.posite.my_alarm.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -34,24 +37,26 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
                 }
             }
 
-            is MainContract.MainEvent.InsertAlarmState -> {
+            is MainContract.MainEvent.InsertAlarm -> {
                 viewModelScope.launch {
-                    repository.addTime(time = event.alarm)
+                    val coroutineScope = CoroutineScope(Dispatchers.IO)
+                    coroutineScope.async { repository.addAlarm(time = event.alarm) }.await()
+                    setEffect { MainContract.MainEffect.ItemInserted(true) }
                 }
             }
 
-            is MainContract.MainEvent.UpdateAlarmState -> {
+            is MainContract.MainEvent.UpdateAlarm -> {
                 viewModelScope.launch {
-                    repository.updateTime(alarm = event.alarm)
+                    repository.updateAlarm(alarm = event.alarm)
                 }
             }
 
-            is MainContract.MainEvent.DeleteAlarmState -> {
+            is MainContract.MainEvent.DeleteAlarm -> {
                 viewModelScope.launch {
-                    repository.deleteTime(alarm = event.alarm)
-                    setEffect { MainContract.MainEffect.ShowToast("Alarm deleted") }
+                    repository.deleteAlarms(alarm = event.alarm)
                 }
             }
+
         }
     }
 
@@ -61,12 +66,12 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
     fun getAlarmState(id: Long) = setEvent(MainContract.MainEvent.GetAlarmState(id))
 
     fun insertAlarmState(alarm: AlarmStateEntity) =
-        setEvent(MainContract.MainEvent.InsertAlarmState(alarm))
+        setEvent(MainContract.MainEvent.InsertAlarm(alarm))
 
     fun updateAlarmState(alarm: AlarmStateEntity) =
-        setEvent(MainContract.MainEvent.UpdateAlarmState(alarm))
+        setEvent(MainContract.MainEvent.UpdateAlarm(alarm))
 
     fun deleteAlarmState(alarm: AlarmStateEntity) =
-        setEvent(MainContract.MainEvent.DeleteAlarmState(alarm))
+        setEvent(MainContract.MainEvent.DeleteAlarm(alarm))
 
 }

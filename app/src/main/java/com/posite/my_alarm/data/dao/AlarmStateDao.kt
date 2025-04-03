@@ -25,4 +25,7 @@ interface AlarmStateDao {
 
     @Delete
     suspend fun deleteAlarmState(alarmState: AlarmStateEntity)
+
+    @Delete
+    suspend fun deleteAlarmStates(alarmStates: List<AlarmStateEntity>)
 }
