@@ -1,14 +1,19 @@
 package com.posite.my_alarm.ui.picker
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,6 +34,52 @@ fun TimePicker(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val visibleItemMiddle = remember { 3 / 2 }
+        val adjustedMeridiem = listOf("오전", "오후")
+        val startIndex = remember { 0 }
+        val listMeridiemState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex)
+
+        val adjustedHour = (1..12).toList()
+        val listScrollMax = Int.MAX_VALUE
+        val listScrollMiddle = remember { listScrollMax / 2 }
+        val listStartIndex =
+            remember { listScrollMiddle - listScrollMiddle % adjustedHour.size - visibleItemMiddle + 6 }
+        val listHourState = rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
+
+
+
+        LaunchedEffect(listHourState) {
+            var prevIndex = listHourState.firstVisibleItemIndex
+            Log.d("prev", "prev: $prevIndex")
+            snapshotFlow { listHourState.isScrollInProgress }.collect { isScrolling ->
+                if (isScrolling) {
+                    snapshotFlow { listHourState.firstVisibleItemIndex }.collect { index ->
+                        when {
+                            index > prevIndex && hourState.selectedItem == 12 -> {
+                                if (meridiemState.selectedItem == "오전") {
+                                    listMeridiemState.animateScrollToItem(1)
+                                } else {
+                                    listMeridiemState.animateScrollToItem(0)
+                                }
+                            }
+
+                            index < prevIndex && hourState.selectedItem == 11 -> {
+                                if (meridiemState.selectedItem == "오후") {
+                                    listMeridiemState.animateScrollToItem(0)
+                                } else {
+                                    listMeridiemState.animateScrollToItem(1)
+                                }
+                            }
+                        }
+                        prevIndex = index
+                    }
+
+                }
+
+            }
+        }
+
+
         Picker(
             modifier = Modifier
                 .width(60.dp)
@@ -39,6 +90,7 @@ fun TimePicker(
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 2,
             isInfinity = false,
+            lazyListState = listMeridiemState
         )
 
         VerticalDivider(
@@ -47,14 +99,17 @@ fun TimePicker(
                 .height(0.dp)
         )
 
+
+
         Picker(
             modifier = Modifier.width(40.dp),
-            items = (0..12).toList(),
+            items = (1..12).toList(),
             state = hourState,
             startIndex = 6,
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 3,
+            lazyListState = listHourState
         )
 
         Text(
@@ -70,6 +125,7 @@ fun TimePicker(
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 3,
+            lazyListState = null
         )
     }
 }

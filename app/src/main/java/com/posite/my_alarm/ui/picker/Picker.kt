@@ -1,12 +1,10 @@
 package com.posite.my_alarm.ui.picker
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -32,12 +30,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
-import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.data.model.PickerState
-import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.util.fadingEdge
 import com.posite.my_alarm.util.noRippleClickable
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -64,7 +59,8 @@ fun <T> Picker(
     ),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     itemTextAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    isInfinity: Boolean = true
+    isInfinity: Boolean = true,
+    lazyListState: LazyListState?
 ) {
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -92,14 +88,15 @@ fun <T> Picker(
     }
 
     fun getItem(index: Int) = adjustedItems[index % adjustedItems.size]
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
+    val listState = lazyListState ?: rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
     val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+
 
     val itemHeight = with(density) {
         selectedTextStyle.fontSize.toDp() + itemPadding.calculateTopPadding() + itemPadding.calculateBottomPadding()
     }
 
-    LaunchedEffect(listState) {
+    LaunchedEffect(lazyListState) {
         snapshotFlow { listState.firstVisibleItemIndex }
             .mapNotNull { index -> getItem(index + visibleItemsMiddle) }
             .distinctUntilChanged()
@@ -164,7 +161,7 @@ fun <T> Picker(
                         .then(textModifier)
                         .noRippleClickable {
                             //Log.d("Picker", "Clicked on $index item: ${getItem(index)}")
-                            if(!isInfinity && (index == 0 || index == listScrollCount - 1)) {
+                            if (!isInfinity && (index == 0 || index == listScrollCount - 1)) {
                                 return@noRippleClickable
                             }
                             coroutineScope.launch {
@@ -178,6 +175,7 @@ fun <T> Picker(
 
 }
 
+/*
 @Composable
 @Preview(showBackground = true)
 fun PickerPreView() {
@@ -195,4 +193,4 @@ fun PickerPreView() {
             isInfinity = false,
         )
     }
-}
+}*/
