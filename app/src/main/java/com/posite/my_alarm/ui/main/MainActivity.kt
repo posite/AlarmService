@@ -158,7 +158,25 @@ class MainActivity : ComponentActivity() {
                                 set.remove(it)
                                 Log.d("MainActivity", "set: $set")
                             }, onSwitchChanges = {
-                                if (it.not()) {
+                                if (it) {
+                                    addAlarm(
+                                        item.meridiem,
+                                        item.hour,
+                                        item.minute.toString(),
+                                        Intent(context, AlarmReceiver::class.java).putExtra(
+                                            TAG,
+                                            item.id
+                                        )
+                                            .let { intent ->
+                                                PendingIntent.getBroadcast(
+                                                    context,
+                                                    item.id.toInt(),
+                                                    intent,
+                                                    PendingIntent.FLAG_IMMUTABLE
+                                                )
+                                            }
+                                    )
+                                } else {
                                     removeAlarm(
                                         Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
                                             .let { intent ->
