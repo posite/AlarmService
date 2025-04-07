@@ -35,6 +35,9 @@ fun TimePickerDialog(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
     minuteState: PickerState<String>,
+    meridiem: String,
+    hour: Int,
+    minute: Int,
     onDismissRequest: () -> Unit,
     onDoneClickListener: () -> Unit
 ) {
@@ -66,7 +69,7 @@ fun TimePickerDialog(
                         .padding(vertical = 8.dp)
                 )
 
-                TimePicker(meridiemState, hourState, minuteState)
+                TimePicker(meridiemState, hourState, minuteState, meridiem, hour, minute)
                 HorizontalDivider(
                     modifier = Modifier
                         .wrapContentHeight()
@@ -112,7 +115,10 @@ fun TimePickerDialogPreview() {
             },
             meridiemState = PickerState("오전"),
             hourState = PickerState(6),
-            minuteState = PickerState("00")
+            minuteState = PickerState("00"),
+            meridiem = "오전",
+            hour = 6,
+            minute = 0,
         )
     }
 }

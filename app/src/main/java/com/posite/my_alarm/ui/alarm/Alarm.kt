@@ -35,7 +35,8 @@ fun Alarm(
     isDeleteMode: MutableState<Boolean>,
     onAlarmSelected: () -> Unit,
     onAlarmUnselected: (AlarmStateEntity) -> Unit,
-    onSwitchChanges: (Boolean) -> Unit
+    onSwitchChanges: (Boolean) -> Unit,
+    onAlarmClicked: () -> Unit
 ) {
     val isChecked = remember { mutableStateOf(alarm.isActive) }
     val isSelected = remember { mutableStateOf(false) }
@@ -43,9 +44,14 @@ fun Alarm(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(shape = RoundedCornerShape(30.dp), color = Color(0xFFEEEEEE))
+            .background(shape = RoundedCornerShape(15.dp), color = Color(0xFFEEEEEE))
             .height(120.dp)
-            .roundedRippleClickable(30.dp, onClick = {}, onLongClick = {
+            .padding(4.dp, 0.dp, 16.dp, 0.dp)
+            .roundedRippleClickable(15.dp, onClick = {
+                if (isDeleteMode.value.not()) {
+                    onAlarmClicked()
+                }
+            }, onLongClick = {
                 isDeleteMode.value = true
                 isSelected.value = true
                 onAlarmSelected()

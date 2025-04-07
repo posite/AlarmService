@@ -40,14 +40,21 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
             is MainContract.MainEvent.InsertAlarm -> {
                 viewModelScope.launch {
                     val coroutineScope = CoroutineScope(Dispatchers.IO)
-                    coroutineScope.async { repository.addAlarm(time = event.alarm) }.await()
+                    coroutineScope.async {
+                        repository.addAlarm(alarm = event.alarm)
+                    }.await()
                     setEffect { MainContract.MainEffect.ItemInserted(true) }
                 }
             }
 
             is MainContract.MainEvent.UpdateAlarm -> {
                 viewModelScope.launch {
-                    repository.updateAlarm(alarm = event.alarm)
+                    val coroutineScope = CoroutineScope(Dispatchers.IO)
+                    coroutineScope.async {
+                        repository.updateAlarm(alarm = event.alarm)
+                        setState { copy(selectedAlarm = event.alarm) }
+                    }.await()
+                    setEffect { MainContract.MainEffect.ItemUpdated(true) }
                 }
             }
 

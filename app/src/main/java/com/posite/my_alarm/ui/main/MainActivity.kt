@@ -17,6 +17,7 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
@@ -63,7 +64,6 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val alarmManager by lazy { getSystemService(Context.ALARM_SERVICE) as AlarmManager }
-
     private val viewModel by viewModels<MainViewModel>()
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -85,14 +85,22 @@ class MainActivity : ComponentActivity() {
         onEffect()
         setContent {
             val context = LocalContext.current
-            val isShowTimePicker = remember { mutableStateOf(false) }
-            val meridiemState = remember { PickerState("오전") }
-            val hourState = remember { PickerState(0) }
-            val minuteState = remember { PickerState("00") }
-            val isDeleteMode = remember { mutableStateOf(false) }
+            val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
+            val meridiemState = remember { PickerState(DEFAULT_MERIDIEM) }
+            val hourState = remember { PickerState(DEFAULT_HOUR) }
+            val minuteState = remember { PickerState(DEFAULT_MINUTE) }
+            val isDeleteMode = remember { mutableStateOf(DEFAULT_MODE_STATE) }
             val set = mutableSetOf<AlarmStateEntity>()
+            val isAlarmClick = remember { mutableStateOf<AlarmStateEntity?>(null) }
             (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
             MyAlarmTheme {
+                BackHandler {
+                    if (isDeleteMode.value) {
+                        isDeleteMode.value = false
+                    } else {
+                        finish()
+                    }
+                }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -106,7 +114,7 @@ class MainActivity : ComponentActivity() {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (isDeleteMode.value) "삭제" else "알람",
+                            text = if (isDeleteMode.value) DELETE_MODE_TITLE else ALARM_MODE_TITLE,
                             fontSize = 20.sp,
                             fontWeight = Bold
                         )
@@ -128,7 +136,7 @@ class MainActivity : ComponentActivity() {
                                                     context,
                                                     alarm.id.toInt(),
                                                     intent,
-                                                    PendingIntent.FLAG_IMMUTABLE
+                                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                                                 )
                                             }
                                         )
@@ -149,7 +157,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                    LazyColumn(modifier = Modifier.padding(12.dp, 0.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.padding(12.dp, 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         items(viewModel.currentState.alarmList) { item ->
                             Alarm(alarm = item, isDeleteMode = isDeleteMode, onAlarmSelected = {
                                 set.add(item)
@@ -172,7 +183,7 @@ class MainActivity : ComponentActivity() {
                                                     context,
                                                     item.id.toInt(),
                                                     intent,
-                                                    PendingIntent.FLAG_IMMUTABLE
+                                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                                                 )
                                             }
                                     )
@@ -184,17 +195,54 @@ class MainActivity : ComponentActivity() {
                                                     context,
                                                     item.id.toInt(),
                                                     intent,
-                                                    PendingIntent.FLAG_IMMUTABLE
+                                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                                                 )
                                             }
                                     )
                                 }
                                 viewModel.updateAlarmState(item.copy(isActive = item.isActive.not()))
                                 Log.d("MainActivity", viewModel.currentState.alarmList.toString())
+                            }, onAlarmClicked = {
+                                isAlarmClick.value = item
+                                Log.d("MainActivity", "isAlarmClick: ${isAlarmClick.value}")
                             })
                         }
                     }
+                    if (isAlarmClick.value != null) {
+                        meridiemState.selectedItem = isAlarmClick.value!!.meridiem
+                        hourState.selectedItem = isAlarmClick.value!!.hour
+                        minuteState.selectedItem = isAlarmClick.value!!.minute.toString()
+                        TimePickerDialog(
+                            meridiem = isAlarmClick.value!!.meridiem,
+                            hour = isAlarmClick.value!!.hour,
+                            minute = isAlarmClick.value!!.minute,
+                            modifier = Modifier.background(color = Color.White),
+                            properties = DialogProperties(
+                                dismissOnBackPress = true,
+                                dismissOnClickOutside = true,
+                            ),
+                            onDismissRequest = { isAlarmClick.value = null },
+                            onDoneClickListener = {
+                                viewModel.updateAlarmState(
+                                    AlarmStateEntity(
+                                        id = isAlarmClick.value!!.id,
+                                        hour = hourState.selectedItem,
+                                        minute = minuteState.selectedItem.toInt(),
+                                        meridiem = meridiemState.selectedItem,
+                                        isActive = true
+                                    )
+                                )
+                                isAlarmClick.value = null
+                            },
+                            meridiemState = meridiemState,
+                            hourState = hourState,
+                            minuteState = minuteState
+                        )
+                    }
                     if (isShowTimePicker.value) {
+                        meridiemState.selectedItem = DEFAULT_MERIDIEM
+                        hourState.selectedItem = DEFAULT_HOUR
+                        minuteState.selectedItem = DEFAULT_MINUTE
                         TimePickerDialog(
                             modifier = Modifier.background(color = Color.White),
                             properties = DialogProperties(
@@ -204,11 +252,6 @@ class MainActivity : ComponentActivity() {
                             onDismissRequest = { isShowTimePicker.value = false },
                             onDoneClickListener = {
                                 isShowTimePicker.value = false
-                                Toast.makeText(
-                                    context,
-                                    "${meridiemState.selectedItem} ${hourState.selectedItem}시 ${minuteState.selectedItem}분",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                                 viewModel.insertAlarmState(
                                     AlarmStateEntity(
                                         hour = hourState.selectedItem,
@@ -220,7 +263,10 @@ class MainActivity : ComponentActivity() {
                             },
                             meridiemState = meridiemState,
                             hourState = hourState,
-                            minuteState = minuteState
+                            minuteState = minuteState,
+                            meridiem = DEFAULT_MERIDIEM,
+                            hour = DEFAULT_HOUR,
+                            minute = DEFAULT_MINUTE.toInt()
                         )
                     }
                 }
@@ -242,12 +288,31 @@ class MainActivity : ComponentActivity() {
                                 this@MainActivity,
                                 viewModel.currentState.alarmList.last().id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_IMMUTABLE
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                             )
                             addAlarm(
                                 viewModel.currentState.alarmList.last().meridiem,
                                 viewModel.currentState.alarmList.last().hour,
                                 viewModel.currentState.alarmList.last().minute.toString(),
+                                pendingIntent
+                            )
+                        }
+
+                        is MainContract.MainEffect.ItemUpdated -> {
+                            if (it.isSuccess.not()) {
+                                delay(1000)
+                            }
+                            val intent = Intent(this@MainActivity, AlarmReceiver::class.java)
+                            val pendingIntent = PendingIntent.getBroadcast(
+                                this@MainActivity,
+                                viewModel.currentState.selectedAlarm!!.id.toInt(),
+                                intent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                            updateAlarm(
+                                viewModel.currentState.selectedAlarm!!.meridiem,
+                                viewModel.currentState.selectedAlarm!!.hour,
+                                viewModel.currentState.selectedAlarm!!.minute.toString(),
                                 pendingIntent
                             )
                         }
@@ -280,21 +345,52 @@ class MainActivity : ComponentActivity() {
             set(Calendar.SECOND, 0)
         }
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: ${calendar.timeInMillis}")
+        Toast.makeText(
+            this,
+            "${meridiemState} ${hourState}시 ${minuteState}분 알람이 설정되었습니다.",
+            Toast.LENGTH_SHORT
+        ).show()
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis, intent
         )
-        /*alarmManager.setInexactRepeating(
+    }
+
+    private fun updateAlarm(
+        meridiemState: String,
+        hourState: Int,
+        minuteState: String,
+        intent: PendingIntent
+    ) {
+        removeAlarm(intent)
+        val calendar: Calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            if (meridiemState == "오후") {
+                if (hourState == 12) {
+                    set(Calendar.HOUR_OF_DAY, hourState)
+                } else {
+                    set(Calendar.HOUR_OF_DAY, hourState + 12)
+                }
+            } else {
+                set(Calendar.HOUR_OF_DAY, hourState)
+            }
+            set(Calendar.MINUTE, minuteState.toInt())
+            set(Calendar.SECOND, 0)
+        }
+        Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: ${calendar.timeInMillis}")
+        Toast.makeText(
+            this,
+            "${meridiemState} ${hourState}시 ${minuteState}분 알람이 설정되었습니다.",
+            Toast.LENGTH_SHORT
+        ).show()
+        alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            AlarmManager.INTERVAL_DAY,
-            intent
-        )*/
+            calendar.timeInMillis, intent
+        )
     }
 
     private fun removeAlarm(intent: PendingIntent) {
         alarmManager.cancel(intent)
-        intent.cancel()
     }
 
     private fun askNotificationPermission() {
@@ -318,7 +414,7 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    fun alertPermissionCheck(context: Context?): Boolean {
+    private fun alertPermissionCheck(context: Context?): Boolean {
         return !Settings.canDrawOverlays(context)
     }
 
@@ -344,6 +440,16 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.d("MainActivity", "onRequestPermissionsResult: $permissions")
         }
+    }
+
+    companion object {
+        private const val DEFAULT_MERIDIEM = "오전"
+        private const val DEFAULT_HOUR = 6
+        private const val DEFAULT_MINUTE = "00"
+        private const val DEFAULT_ALARM_CLICK = -1L
+        private const val DEFAULT_MODE_STATE = false
+        private const val DELETE_MODE_TITLE = "삭제"
+        private const val ALARM_MODE_TITLE = "알람"
     }
 }
 

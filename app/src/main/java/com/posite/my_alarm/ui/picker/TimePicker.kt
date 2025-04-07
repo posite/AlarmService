@@ -27,7 +27,10 @@ import com.posite.my_alarm.data.model.PickerState
 fun TimePicker(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
-    minuteState: PickerState<String>
+    minuteState: PickerState<String>,
+    meridiem: String,
+    hour: Int,
+    minute: Int
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -36,14 +39,14 @@ fun TimePicker(
     ) {
         val visibleItemMiddle = remember { 3 / 2 }
         val adjustedMeridiem = listOf("오전", "오후")
-        val startIndex = remember { 0 }
+        val startIndex = remember { if (meridiem == "오후") 1 else 0 }
         val listMeridiemState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex)
 
         val adjustedHour = (1..12).toList()
         val listScrollMax = Int.MAX_VALUE
         val listScrollMiddle = remember { listScrollMax / 2 }
         val listStartIndex =
-            remember { listScrollMiddle - listScrollMiddle % adjustedHour.size - visibleItemMiddle + 6 }
+            remember { listScrollMiddle - listScrollMiddle % adjustedHour.size - visibleItemMiddle + hour - 1 }
         val listHourState = rememberLazyListState(initialFirstVisibleItemIndex = listStartIndex)
 
 
@@ -90,6 +93,7 @@ fun TimePicker(
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 2,
             isInfinity = false,
+            startIndex = if (meridiem == "오후") 1 else 0,
             lazyListState = listMeridiemState
         )
 
@@ -105,7 +109,7 @@ fun TimePicker(
             modifier = Modifier.width(40.dp),
             items = (1..12).toList(),
             state = hourState,
-            startIndex = 6,
+            startIndex = hour,
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 3,
@@ -125,7 +129,8 @@ fun TimePicker(
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 3,
-            lazyListState = null
+            lazyListState = null,
+            startIndex = minute
         )
     }
 }
