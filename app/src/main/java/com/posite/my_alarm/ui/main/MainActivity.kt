@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
             onObtainingPermissionOverlayWindow(this)
         }
         viewModel.getAlarmList()
+        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         onEffect()
         setContent {
             val context = LocalContext.current
@@ -92,7 +93,6 @@ class MainActivity : ComponentActivity() {
             val isDeleteMode = remember { mutableStateOf(DEFAULT_MODE_STATE) }
             val set = mutableSetOf<AlarmStateEntity>()
             val isAlarmClick = remember { mutableStateOf<AlarmStateEntity?>(null) }
-            (context as? Activity)?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
             MyAlarmTheme {
                 BackHandler {
                     if (isDeleteMode.value) {
@@ -189,7 +189,10 @@ class MainActivity : ComponentActivity() {
                                     )
                                 } else {
                                     removeAlarm(
-                                        Intent(context, AlarmReceiver::class.java).putExtra(TAG, 0)
+                                        Intent(context, AlarmReceiver::class.java).putExtra(
+                                            TAG,
+                                            item.id
+                                        )
                                             .let { intent ->
                                                 PendingIntent.getBroadcast(
                                                     context,
@@ -356,6 +359,10 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun removeAlarm(intent: PendingIntent) {
+        alarmManager.cancel(intent)
+    }
+
     private fun updateAlarm(
         meridiemState: String,
         hourState: Int,
@@ -363,34 +370,7 @@ class MainActivity : ComponentActivity() {
         intent: PendingIntent
     ) {
         removeAlarm(intent)
-        val calendar: Calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            if (meridiemState == "오후") {
-                if (hourState == 12) {
-                    set(Calendar.HOUR_OF_DAY, hourState)
-                } else {
-                    set(Calendar.HOUR_OF_DAY, hourState + 12)
-                }
-            } else {
-                set(Calendar.HOUR_OF_DAY, hourState)
-            }
-            set(Calendar.MINUTE, minuteState.toInt())
-            set(Calendar.SECOND, 0)
-        }
-        Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: ${calendar.timeInMillis}")
-        Toast.makeText(
-            this,
-            "${meridiemState} ${hourState}시 ${minuteState}분 알람이 설정되었습니다.",
-            Toast.LENGTH_SHORT
-        ).show()
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis, intent
-        )
-    }
-
-    private fun removeAlarm(intent: PendingIntent) {
-        alarmManager.cancel(intent)
+        addAlarm(meridiemState, hourState, minuteState, intent)
     }
 
     private fun askNotificationPermission() {
@@ -446,7 +426,6 @@ class MainActivity : ComponentActivity() {
         private const val DEFAULT_MERIDIEM = "오전"
         private const val DEFAULT_HOUR = 6
         private const val DEFAULT_MINUTE = "00"
-        private const val DEFAULT_ALARM_CLICK = -1L
         private const val DEFAULT_MODE_STATE = false
         private const val DELETE_MODE_TITLE = "삭제"
         private const val ALARM_MODE_TITLE = "알람"

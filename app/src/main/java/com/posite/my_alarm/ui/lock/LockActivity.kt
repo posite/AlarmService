@@ -1,6 +1,14 @@
 package com.posite.my_alarm.ui.lock
 
+import android.content.Context
+import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
+import android.os.CombinedVibration
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -32,15 +40,36 @@ import java.util.Locale
 
 @AndroidEntryPoint
 class LockActivity : ComponentActivity() {
+    private val vibrator by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        } else {
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         setShowWhenLocked(true)
+        setTurnScreenOn(true)
         enableEdgeToEdge()
         setContent {
             // 뒤로가기 버튼을 눌렀을 때 아무 동작도 하지 않도록 설정
             BackHandler { }
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val timings = longArrayOf(100, 200, 100, 200, 100, 200)
+                val amplitudes = intArrayOf(0, 50, 0, 100, 0, 200)
+                val vibrationEffect = VibrationEffect.createWaveform(timings, amplitudes, 0)
+                val combinedVibration = CombinedVibration.createParallel(vibrationEffect)
+                (vibrator as VibratorManager).vibrate(combinedVibration)
+                Log.i("vibrator", "AlarmReceiver onReceive() called 10000 : $vibrator")
+            } else {
+                val pattern = longArrayOf(0, 3000)
+                (vibrator as Vibrator).vibrate(VibrationEffect.createWaveform(pattern, 0))
+                Log.i("vibrator", "AlarmReceiver onReceive() called  3000 : $vibrator")
+            }
             MyAlarmTheme {
                 Column(
                     modifier = Modifier
@@ -89,7 +118,10 @@ class LockActivity : ComponentActivity() {
                             modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
                         )
                     }
-                    SwipeUnlockButton() {
+                    SwipeUnlockButton {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
+                        else (vibrator as Vibrator).cancel()
+
                         finish()
                     }
                 }
