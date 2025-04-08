@@ -2,6 +2,7 @@ package com.posite.my_alarm.ui.lock
 
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.icu.text.SimpleDateFormat
 import android.os.Build
 import android.os.Bundle
 import android.os.CombinedVibration
@@ -15,10 +16,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,10 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
 import dagger.hilt.android.AndroidEntryPoint
-import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -71,50 +73,44 @@ class LockActivity : ComponentActivity() {
                 Log.i("vibrator", "AlarmReceiver onReceive() called  3000 : $vibrator")
             }
             MyAlarmTheme {
-                Column(
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
                         .background(color = Color.White),
                 ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(color = Color.White)
-                            .weight(1f),
-                        verticalArrangement = Arrangement.Center, // 중앙 정렬
+                            .fillMaxSize()
+                            .background(color = Color.White),
+                        verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        var currentTime by remember { mutableStateOf("") }
-                        var currentDate by remember { mutableStateOf("") }
+                        var currentTime by remember { mutableStateOf("df") }
+                        var currentDate by remember { mutableStateOf("df") }
 
                         LaunchedEffect(Unit) {
-                            while (true) {
-                                // 현재 시간 업데이트
-                                currentTime =
-                                    SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(
-                                        Date()
-                                    )
+                            while(true) {
                                 currentDate =
                                     SimpleDateFormat("yyyy년 MM월 dd일", Locale.getDefault()).format(
                                         Date()
                                     )
+                                currentTime =
+                                    SimpleDateFormat("aa hh:mm", Locale.getDefault()).format(Date())
                                 kotlinx.coroutines.delay(1000) // 1초마다 업데이트
                             }
                         }
 
                         // 현재 날짜 표시
                         Text(
-                            text = currentDate, // 현재 날짜 텍스트
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(vertical = 8.dp) // 위아래 패딩 추가
+                            text = currentDate,
+                            fontSize = 24.sp,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
 
                         // 현재 시간 표시 (크고 중앙에 배치)
                         Text(
                             text = currentTime, // 현재 시간 텍스트
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontSize = MaterialTheme.typography.headlineLarge.fontSize * 2 // 텍스트 크기 조정
-                            ),
+                            fontSize = 32.sp,
                             modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
                         )
                     }
@@ -135,6 +131,49 @@ class LockActivity : ComponentActivity() {
 @Composable
 fun GreetingPreview() {
     MyAlarmTheme {
-        SwipeUnlockButton()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                var currentTime by remember { mutableStateOf("df") }
+                var currentDate by remember { mutableStateOf("df") }
+
+                LaunchedEffect(Unit) {
+                    currentDate =
+                        SimpleDateFormat("yyyy년 MM월 dd일", Locale.getDefault()).format(
+                            Date()
+                        )
+                    currentTime =
+                        SimpleDateFormat("aa hh:mm", Locale.getDefault()).format(Date())
+                    kotlinx.coroutines.delay(1000) // 1초마다 업데이트
+                }
+
+                // 현재 날짜 표시
+                Text(
+                    text = currentDate,
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // 현재 시간 표시 (크고 중앙에 배치)
+                Text(
+                    text = currentTime, // 현재 시간 텍스트
+                    fontSize = 32.sp,
+                    modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
+                )
+            }
+            SwipeUnlockButton {
+
+            }
+        }
+
     }
 }
