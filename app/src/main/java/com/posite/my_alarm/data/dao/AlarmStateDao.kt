@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmStateDao {
-    @Query("SELECT * FROM alarm_table")
+    @Query("SELECT * FROM alarm_table ORDER BY meridiem, hour, minute ASC")
     fun getAllAlarmStates(): Flow<List<AlarmStateEntity>>
 
     @Query("SELECT * FROM alarm_table WHERE id = :id")
