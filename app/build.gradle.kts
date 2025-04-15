@@ -73,5 +73,10 @@ dependencies {
 
     //hilt
     implementation(libs.hilt)
+    implementation(libs.hilt.common)
     ksp(libs.hilt.compiler)
+
+    //work
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
 }
