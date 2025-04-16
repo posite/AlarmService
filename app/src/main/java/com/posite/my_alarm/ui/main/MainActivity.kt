@@ -56,7 +56,10 @@ import com.posite.my_alarm.ui.alarm.Alarm
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.util.AlarmReceiver
-import com.posite.my_alarm.util.AlarmReceiver.Companion.TAG
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -175,9 +178,11 @@ class MainActivity : ComponentActivity() {
                                         item.hour,
                                         item.minute.toString(),
                                         Intent(context, AlarmReceiver::class.java).putExtra(
-                                            TAG,
+                                            ALARM_ID,
                                             item.id
-                                        )
+                                        ).putExtra(ALARM_MERIDIEM, item.meridiem)
+                                            .putExtra(ALARM_HOUR, item.hour)
+                                            .putExtra(ALARM_MINUTE, item.minute)
                                             .let { intent ->
                                                 PendingIntent.getBroadcast(
                                                     context,
@@ -190,7 +195,7 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     removeAlarm(
                                         Intent(context, AlarmReceiver::class.java).putExtra(
-                                            TAG,
+                                            ALARM_ID,
                                             item.id
                                         )
                                             .let { intent ->
@@ -286,7 +291,22 @@ class MainActivity : ComponentActivity() {
                             if (it.isSuccess.not() || viewModel.currentState.alarmList.isEmpty()) {
                                 delay(1000)
                             }
-                            val intent = Intent(this@MainActivity, AlarmReceiver::class.java)
+                            val intent =
+                                Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
+                                    ALARM_ID,
+                                    viewModel.currentState.alarmList.last().id
+                                ).putExtra(
+                                    ALARM_MERIDIEM,
+                                    viewModel.currentState.alarmList.last().meridiem
+                                )
+                                    .putExtra(
+                                        ALARM_HOUR,
+                                        viewModel.currentState.alarmList.last().hour
+                                    )
+                                    .putExtra(
+                                        ALARM_MINUTE,
+                                        viewModel.currentState.alarmList.last().minute
+                                    )
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
                                 viewModel.currentState.alarmList.last().id.toInt(),
@@ -305,7 +325,22 @@ class MainActivity : ComponentActivity() {
                             if (it.isSuccess.not()) {
                                 delay(1000)
                             }
-                            val intent = Intent(this@MainActivity, AlarmReceiver::class.java)
+                            val intent =
+                                Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
+                                    ALARM_ID,
+                                    viewModel.currentState.selectedAlarm!!.id
+                                ).putExtra(
+                                    ALARM_MERIDIEM,
+                                    viewModel.currentState.selectedAlarm!!.meridiem
+                                )
+                                    .putExtra(
+                                        ALARM_HOUR,
+                                        viewModel.currentState.selectedAlarm!!.hour
+                                    )
+                                    .putExtra(
+                                        ALARM_MINUTE,
+                                        viewModel.currentState.selectedAlarm!!.minute
+                                    )
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
                                 viewModel.currentState.selectedAlarm!!.id.toInt(),
