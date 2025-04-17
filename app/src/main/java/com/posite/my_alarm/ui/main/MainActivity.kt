@@ -288,9 +288,7 @@ class MainActivity : ComponentActivity() {
                 viewModel.effect.collect {
                     when (it) {
                         is MainContract.MainEffect.ItemInserted -> {
-                            if (it.isSuccess.not() || viewModel.currentState.alarmList.isEmpty()) {
-                                delay(1000)
-                            }
+                            delay(1000)
                             val intent =
                                 Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
                                     ALARM_ID,
@@ -322,9 +320,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         is MainContract.MainEffect.ItemUpdated -> {
-                            if (it.isSuccess.not()) {
-                                delay(1000)
-                            }
+                            delay(1000)
                             val intent =
                                 Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
                                     ALARM_ID,

@@ -7,7 +7,11 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Build
+import android.util.Log
 import com.posite.my_alarm.ui.lock.LockActivity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -24,7 +28,10 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         )
 
-        setAlarmForNextDay(context, id, meridiem, hour, minute)
+        CoroutineScope(Dispatchers.IO).launch {
+            Log.d("AlarmReceiver", "meridiem: $meridiem, hour: $hour, minute: $minute")
+            setAlarmForNextDay(context, id, meridiem, hour, minute)
+        }
     }
 
     private fun setAlarmForNextDay(
@@ -46,6 +53,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
         val calendar: Calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
+            add(Calendar.DAY_OF_YEAR, 1)
             if (meridiem == "오후") {
                 if (hour == 12) {
                     set(Calendar.HOUR_OF_DAY, hour)
