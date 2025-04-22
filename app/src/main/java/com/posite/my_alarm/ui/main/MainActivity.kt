@@ -143,7 +143,7 @@ class MainActivity : ComponentActivity() {
 
                     Spacer(modifier = Modifier.height(60.dp))
 
-                    MinRemainAlarm(viewModel.currentState.alarmList, scrollState, minTime)
+                    MinRemainAlarm(scrollState, minTime)
 
                     Spacer(modifier = Modifier.height(24.dp))
                     AlarmList(viewModel.currentState.alarmList,

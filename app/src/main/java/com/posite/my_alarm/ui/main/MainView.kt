@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,76 +34,89 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.ui.alarm.Alarm
 import com.posite.my_alarm.ui.main.MainActivity.Companion.ALARM_MODE_TITLE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DELETE_MODE_TITLE
+import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
 @Composable
 fun MinRemainAlarm(
-    alarmList: List<AlarmStateEntity>,
     scrollState: ScrollState,
     minTime: AlarmStateEntity?
 ) {
     val alpha = 1f - (scrollState.value.toFloat() / 400f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
     var remainMinute by remember { mutableStateOf(0) }
-    if (alarmList.isEmpty()) {
+
+    if (minTime != null) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1000)
+                val time = checkTimeChange(minTime)
+                remainHour = time.first
+                remainMinute = time.second
+            }
+        }
+
         Text(
-            text = "설정된 알람이 없습니다.",
-            fontSize = 20.sp,
-            modifier = Modifier.padding(20.dp, 16.dp),
+            text = "${remainHour}시간 ${remainMinute}분 후에",
+            modifier = Modifier.padding(0.dp, 12.dp, 0.dp, 0.dp),
+            fontSize = 32.sp,
             color = Color.Black.copy(alpha)
         )
+
+        Text(
+            text = "알람이 울립니다.",
+            fontSize = 32.sp,
+            color = Color.Black.copy(alpha)
+        )
+        val date = getNextDate(minTime)
+        val meridiem = if (date.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후"
+        Text(
+            text = "${date.get(Calendar.MONTH + 1)}월 $meridiem ${
+                stringResource(
+                    R.string.alarm_time,
+                    date.get(Calendar.HOUR),
+                    date.get(Calendar.MINUTE)
+                )
+            }",
+            fontSize = 16.sp,
+            modifier = Modifier.padding(0.dp, 12.dp, 0.dp, 0.dp),
+            color = Color.Gray.copy(alpha)
+        )
     } else {
-        val localDateTime: LocalDateTime = LocalDateTime.now()
-        if (minTime != null) {
-            var hour = minTime.hour - localDateTime.hour
-            var minute = minTime.minute - localDateTime.minute
-            if (minute < 0) {
-                hour -= 1
-                minute += 60
-            }
-            if (hour < 0) {
-                hour += 24
-            }
-            if (minTime.meridiem == "오후" && hour != 0) {
-                hour += 12
-            }
-            remainHour = hour
-            remainMinute = minute
-
-            Text(
-                text = "${remainHour}시간 ${remainMinute}분 후에",
-                modifier = Modifier.padding(0.dp, 12.dp, 0.dp, 0.dp),
-                fontSize = 32.sp,
-                color = Color.Black.copy(alpha)
-            )
-
-            Text(
-                text = "알람이 울립니다.",
-                fontSize = 32.sp,
-                color = Color.Black.copy(alpha)
-            )
-            val date = getNextDate(minTime!!)
-            date.get(Calendar.MONTH)
-            val meridiem = if (date.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후"
-            Text(
-                text = "${date.get(Calendar.MONTH + 1)}월 $meridiem ${date.get(Calendar.HOUR)}:${
-                    date.get(
-                        Calendar.MINUTE
-                    )
-                }분",
-                fontSize = 16.sp,
-                modifier = Modifier.padding(0.dp, 12.dp, 0.dp, 0.dp),
-                color = Color.Gray.copy(alpha)
-            )
-        }
+        Text(
+            text = "설정된 알람이 없습니다.",
+            fontSize = 32.sp,
+            modifier = Modifier.padding(0.dp, 16.dp),
+            color = Color.Black.copy(alpha)
+        )
     }
+}
+
+private fun checkTimeChange(minTime: AlarmStateEntity): Pair<Int, Int> {
+    val localDateTime: LocalDateTime = LocalDateTime.now()
+    var hour = minTime.hour - localDateTime.hour
+    if (localDateTime.hour > 12) hour += 12
+    var minute = minTime.minute - localDateTime.minute
+    if (minute < 0) {
+        hour -= 1
+        minute += 60
+    }
+    if (hour < 0) {
+        hour += 24
+    }
+    if (minTime.meridiem == "오후" && hour != 0 && hour < 12) {
+        hour += 12
+    }
+    return Pair(hour, minute)
 }
 
 @Composable
@@ -223,7 +237,7 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
         set(Calendar.MINUTE, alarm.minute)
         set(Calendar.SECOND, 0)
     }
-    if (System.currentTimeMillis() > calendar.timeInMillis) {
+    if (System.currentTimeMillis() >= calendar.timeInMillis) {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
     }
     return calendar
