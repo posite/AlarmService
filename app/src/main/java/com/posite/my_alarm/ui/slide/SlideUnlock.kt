@@ -1,6 +1,7 @@
 package com.posite.my_alarm.ui.slide
 
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.posite.my_alarm.util.SlidePosition
 import kotlin.math.roundToInt
 
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SwipeUnlockButton(
@@ -52,12 +54,15 @@ fun SwipeUnlockButton(
         mutableStateOf(IntSize.Zero)
     }
     val density = LocalDensity.current
+    val splineBasedDecay = rememberSplineBasedDecay<Float>()
+
     val state = remember {
         AnchoredDraggableState(
             initialValue = SlidePosition.Start,
             positionalThreshold = { totalDistance: Float -> totalDistance * 0.5f },
             velocityThreshold = { Float.MAX_VALUE },
-            animationSpec = tween(),
+            snapAnimationSpec = tween(),
+            decayAnimationSpec = splineBasedDecay
         )
     }
     LaunchedEffect(componentSize) {

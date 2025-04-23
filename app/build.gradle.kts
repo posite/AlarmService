@@ -79,4 +79,7 @@ dependencies {
     //work
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.hilt.work)
+
+    //compose
+    implementation(libs.compose.animation)
 }

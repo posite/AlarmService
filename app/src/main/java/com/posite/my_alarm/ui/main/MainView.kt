@@ -2,6 +2,8 @@ package com.posite.my_alarm.ui.main
 
 import android.icu.util.Calendar
 import android.util.Log
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -147,8 +149,18 @@ fun AlarmList(
                 modifier = Modifier.padding(12.dp, 0.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(alarmList) { item ->
+                items(items = alarmList, key = { it.id }) { item ->
                     Alarm(
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            ),
+                            fadeOutSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            )
+                        ),
                         alarm = item,
                         isDeleteMode = isDeleteMode,
                         onAlarmSelected = {

@@ -31,6 +31,7 @@ import com.posite.my_alarm.util.roundedRippleClickable
 
 @Composable
 fun Alarm(
+    modifier: Modifier = Modifier,
     alarm: AlarmStateEntity,
     isDeleteMode: MutableState<Boolean>,
     onAlarmSelected: () -> Unit,
@@ -42,7 +43,7 @@ fun Alarm(
     val isSelected = remember { mutableStateOf(false) }
     //Log.d("dp", "30dp: ${30.dp.value}")
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(shape = RoundedCornerShape(15.dp), color = Color(0xFFEEEEEE))
             .height(120.dp)
@@ -122,4 +123,5 @@ fun Alarm(
             )
         )
     }
+
 }
