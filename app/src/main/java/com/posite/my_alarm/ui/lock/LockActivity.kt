@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -89,7 +88,7 @@ class LockActivity : ComponentActivity() {
                         var currentDate by remember { mutableStateOf("df") }
 
                         LaunchedEffect(Unit) {
-                            while(true) {
+                            while (true) {
                                 currentDate =
                                     SimpleDateFormat("yyyy년 MM월 dd일", Locale.getDefault()).format(
                                         Date()
@@ -115,6 +114,7 @@ class LockActivity : ComponentActivity() {
                         )
                     }
                     SwipeUnlockButton {
+                        Log.d("LockActivity", "SwipeUnlockButton clicked")
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
                         else (vibrator as Vibrator).cancel()
 

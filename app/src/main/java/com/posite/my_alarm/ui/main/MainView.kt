@@ -58,6 +58,7 @@ fun MinRemainAlarm(
     var remainMinute by remember { mutableStateOf(0) }
 
     if (minTime != null) {
+        Log.d("MainActivity", "minTime: $minTime")
         LaunchedEffect(Unit) {
             while (true) {
                 delay(1000)
@@ -82,7 +83,7 @@ fun MinRemainAlarm(
         val date = getNextDate(minTime)
         val meridiem = if (date.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후"
         Text(
-            text = "${date.get(Calendar.MONTH + 1)}월 $meridiem ${
+            text = "${date.get(Calendar.MONTH) + 1}월 ${date.get(Calendar.DAY_OF_MONTH)}일 $meridiem ${
                 stringResource(
                     R.string.alarm_time,
                     date.get(Calendar.HOUR),
@@ -104,9 +105,11 @@ fun MinRemainAlarm(
 }
 
 private fun checkTimeChange(minTime: AlarmStateEntity): Pair<Int, Int> {
-    val localDateTime: LocalDateTime = LocalDateTime.now()
+    val localDateTime = LocalDateTime.now()
     var hour = minTime.hour - localDateTime.hour
-    if (localDateTime.hour > 12) hour += 12
+    if (minTime.meridiem == "오후") {
+        hour += 12
+    }
     var minute = minTime.minute - localDateTime.minute
     if (minute < 0) {
         hour -= 1
@@ -115,9 +118,7 @@ private fun checkTimeChange(minTime: AlarmStateEntity): Pair<Int, Int> {
     if (hour < 0) {
         hour += 24
     }
-    if (minTime.meridiem == "오후" && hour != 0 && hour < 12) {
-        hour += 12
-    }
+
     return Pair(hour, minute)
 }
 
@@ -135,6 +136,7 @@ fun AlarmList(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(0.dp, 0.dp, 0.dp, 12.dp)
             .background(color = Color.White)
     ) {
         AlarmListTitle(isDeleteMode, set, isShowTimePicker, onRemoveAlarm)
@@ -244,7 +246,11 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
                 set(Calendar.HOUR_OF_DAY, alarm.hour + 12)
             }
         } else {
-            set(Calendar.HOUR_OF_DAY, alarm.hour)
+            if (alarm.hour == 12) {
+                set(Calendar.HOUR_OF_DAY, 0)
+            } else {
+                set(Calendar.HOUR_OF_DAY, alarm.hour)
+            }
         }
         set(Calendar.MINUTE, alarm.minute)
         set(Calendar.SECOND, 0)
