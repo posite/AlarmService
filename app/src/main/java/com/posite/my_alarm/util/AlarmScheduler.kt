@@ -34,7 +34,10 @@ object AlarmScheduler {
             set(Calendar.MINUTE, alarm.minute)
             set(Calendar.SECOND, 0)
         }
-
+        val current = System.currentTimeMillis()
+        if (current > calendar.timeInMillis) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(

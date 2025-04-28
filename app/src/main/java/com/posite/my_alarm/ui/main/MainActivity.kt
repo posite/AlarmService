@@ -137,12 +137,10 @@ class MainActivity : ComponentActivity() {
                         if (viewModel.currentState.alarmList.isEmpty().not()) {
                             minTime = viewModel.currentState.alarmList.filter { it.isActive }
                                 .minByOrNull { getNextDate(it).timeInMillis }
-
                         }
                     }
 
                     Spacer(modifier = Modifier.height(60.dp))
-
                     MinRemainAlarm(scrollState, minTime)
 
                     Spacer(modifier = Modifier.height(24.dp))

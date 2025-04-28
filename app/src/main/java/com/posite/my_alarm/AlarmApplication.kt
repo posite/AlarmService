@@ -1,23 +1,26 @@
 package com.posite.my_alarm
 
 import android.app.Application
-import androidx.hilt.work.HiltWorkerFactory
-import androidx.work.Configuration
+import android.content.Context
+import com.posite.my_alarm.data.dao.AlarmStateDao
+import com.posite.my_alarm.data.repository.TimeRepository
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 @HiltAndroidApp
-class AlarmApplication : Application(), Configuration.Provider {
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
+class AlarmApplication : Application() {
+    lateinit var timeRepository: TimeRepository
 
+    @Inject
+    lateinit var alarmStateDao: AlarmStateDao
     override fun onCreate() {
         super.onCreate()
+        timeRepository = TimeRepository(alarmStateDao)
     }
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setMinimumLoggingLevel(android.util.Log.INFO)
-            .setWorkerFactory(workerFactory)
-            .build()
+    companion object {
+        fun Context.getMyApplication(): AlarmApplication {
+            return applicationContext as AlarmApplication
+        }
+    }
 }
