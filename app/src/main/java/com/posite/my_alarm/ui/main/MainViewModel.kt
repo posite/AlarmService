@@ -43,7 +43,7 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
                     coroutineScope.async {
                         repository.addAlarm(alarm = event.alarm)
                     }.await()
-                    setEffect { MainContract.MainEffect.ItemInserted(true) }
+                    setEffect { MainContract.MainEffect.ItemInserted(true, event.alarm) }
                 }
             }
 

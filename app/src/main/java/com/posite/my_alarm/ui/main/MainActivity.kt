@@ -281,29 +281,29 @@ class MainActivity : ComponentActivity() {
                             val intent =
                                 Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
                                     ALARM_ID,
-                                    viewModel.currentState.alarmList.last().id
+                                    it.alarm.id
                                 ).putExtra(
                                     ALARM_MERIDIEM,
-                                    viewModel.currentState.alarmList.last().meridiem
+                                    it.alarm.meridiem
                                 )
                                     .putExtra(
                                         ALARM_HOUR,
-                                        viewModel.currentState.alarmList.last().hour
+                                        it.alarm.hour
                                     )
                                     .putExtra(
                                         ALARM_MINUTE,
-                                        viewModel.currentState.alarmList.last().minute
+                                        it.alarm.minute
                                     )
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
-                                viewModel.currentState.alarmList.last().id.toInt(),
+                                it.alarm.id.toInt(),
                                 intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                             )
                             addAlarm(
-                                viewModel.currentState.alarmList.last().meridiem,
-                                viewModel.currentState.alarmList.last().hour,
-                                viewModel.currentState.alarmList.last().minute.toString(),
+                                it.alarm.meridiem,
+                                it.alarm.hour,
+                                it.alarm.minute.toString(),
                                 pendingIntent
                             )
                         }
