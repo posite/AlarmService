@@ -1,5 +1,6 @@
 package com.posite.my_alarm.ui.slide
 
+import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -55,7 +56,7 @@ fun SwipeUnlockButton(
     }
     val density = LocalDensity.current
     val splineBasedDecay = rememberSplineBasedDecay<Float>()
-
+    var half = with(density) { (componentSize.width - 60.dp.toPx()) / 2 }
     val state = remember {
         AnchoredDraggableState(
             initialValue = SlidePosition.Start,
@@ -68,6 +69,7 @@ fun SwipeUnlockButton(
     LaunchedEffect(componentSize) {
         if (componentSize.width > 0) {
             val endPosition = with(density) { (componentSize.width - 60.dp.toPx()) }
+            half = with(density) { (componentSize.width - 60.dp.toPx()) / 2 }
             state.updateAnchors(
                 DraggableAnchors {
                     SlidePosition.Start at -0f
@@ -79,13 +81,17 @@ fun SwipeUnlockButton(
     var swipeText by remember {
         mutableStateOf("밀어서 잠금 해제")
     }
-
+    //Log.d("SwipeUnlockButton", "end: ${(componentSize.width - dpToFloat(60.dp))}")
     LaunchedEffect(state.currentValue) {
-        if (state.currentValue == SlidePosition.Start && state.offset > componentSize.width.toFloat() / 2) {
+        Log.d(
+            "SwipeUnlockButton",
+            "currentValue: ${state.currentValue}  offset: ${state.offset}  half: $half"
+        )
+        if (state.currentValue == SlidePosition.Start && state.offset > half) {
             state.snapTo(SlidePosition.End)
         }
 
-        if (state.offset > componentSize.width.toFloat() / 2) {
+        if (state.offset > half) {
             swipeText = "잠금 해제 완료"
             onSwipe()
         } else {
