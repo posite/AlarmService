@@ -1,5 +1,6 @@
 package com.posite.my_alarm.ui.main
 
+import com.posite.my_alarm.icon.Add
 import android.icu.util.Calendar
 import android.util.Log
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -14,12 +15,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -38,10 +37,13 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
+import com.posite.my_alarm.icon.Add
+import com.posite.my_alarm.icon.Delete
 import com.posite.my_alarm.ui.alarm.Alarm
 import com.posite.my_alarm.ui.main.MainActivity.Companion.ALARM_MODE_TITLE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DELETE_MODE_TITLE
@@ -53,7 +55,7 @@ fun MinRemainAlarm(
     scrollState: ScrollState,
     minTime: AlarmStateEntity?
 ) {
-    val alpha = 1f - (scrollState.value.toFloat() / 400f).coerceIn(0f, 1f)
+    val alpha = 1f - (scrollState.value.toFloat() / 350f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
     var remainMinute by remember { mutableStateOf(0) }
 
@@ -136,7 +138,7 @@ fun AlarmList(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(0.dp, 0.dp, 0.dp, 12.dp)
+            .padding(0.dp, 40.dp, 0.dp, 12.dp)
             .background(color = Color.White)
     ) {
         AlarmListTitle(isDeleteMode, set, isShowTimePicker, onRemoveAlarm)
@@ -199,13 +201,13 @@ fun AlarmListTitle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp, 16.dp),
+            .padding(20.dp, 0.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = if (isDeleteMode.value) DELETE_MODE_TITLE else ALARM_MODE_TITLE,
-            fontSize = 20.sp,
+            fontSize = 24.sp,
             fontWeight = Bold
         )
         IconButton(
@@ -227,10 +229,10 @@ fun AlarmListTitle(
             }
         ) {
             Icon(
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.size(24.dp),
                 tint = Color.Black,
                 contentDescription = "Add",
-                imageVector = if (isDeleteMode.value) Icons.Default.Delete else Icons.Default.Add
+                imageVector = if (isDeleteMode.value) Delete else Add
             )
         }
     }
@@ -259,4 +261,23 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
     }
     return calendar
+}
+
+@Preview(showBackground = true)
+@Composable
+fun IconPreview() {
+    IconButton(
+        modifier = Modifier.background(
+            shape = CircleShape,
+            color = Color.Transparent
+        ),
+        onClick = { }
+    ) {
+        Icon(
+            modifier = Modifier.size(24.dp),
+            tint = Color.Black,
+            contentDescription = "Add",
+            imageVector = Add
+        )
+    }
 }
