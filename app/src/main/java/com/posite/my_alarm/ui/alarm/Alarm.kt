@@ -96,7 +96,11 @@ fun Alarm(
                 color = Color.Transparent
             )
             Text(
-                text = stringResource(R.string.alarm_time, alarm.hour, alarm.minute),
+                text = stringResource(
+                    R.string.alarm_time,
+                    if (alarm.meridiem == "오전" && alarm.hour == 0) 12 else alarm.hour,
+                    alarm.minute
+                ),
                 fontSize = 32.sp,
                 color = textColor
             )

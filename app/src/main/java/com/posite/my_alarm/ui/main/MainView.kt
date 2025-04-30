@@ -1,6 +1,5 @@
 package com.posite.my_alarm.ui.main
 
-import com.posite.my_alarm.icon.Add
 import android.icu.util.Calendar
 import android.util.Log
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -88,7 +87,7 @@ fun MinRemainAlarm(
             text = "${date.get(Calendar.MONTH) + 1}월 ${date.get(Calendar.DAY_OF_MONTH)}일 $meridiem ${
                 stringResource(
                     R.string.alarm_time,
-                    date.get(Calendar.HOUR),
+                    if (date.get(Calendar.HOUR_OF_DAY) == 0) 12 else date.get(Calendar.HOUR),
                     date.get(Calendar.MINUTE)
                 )
             }",
@@ -154,6 +153,7 @@ fun AlarmList(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(items = alarmList, key = { it.id }) { item ->
+                    //Log.d("MainActivity", "item: $item")
                     Alarm(
                         modifier = Modifier.animateItem(
                             fadeInSpec = tween(
@@ -257,6 +257,7 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
         set(Calendar.MINUTE, alarm.minute)
         set(Calendar.SECOND, 0)
     }
+    //Log.d("MainActivity", "calendar: ${calendar.get(Calendar.HOUR_OF_DAY)}")
     if (System.currentTimeMillis() >= calendar.timeInMillis) {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
     }

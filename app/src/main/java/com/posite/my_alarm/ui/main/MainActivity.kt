@@ -133,7 +133,7 @@ class MainActivity : ComponentActivity() {
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    LaunchedEffect(viewModel.currentState.alarmList) {
+                    LaunchedEffect(viewModel.currentState) {
                         if (viewModel.currentState.alarmList.isEmpty().not()) {
                             minTime = viewModel.currentState.alarmList.filter { it.isActive }
                                 .minByOrNull { getNextDate(it).timeInMillis }
@@ -251,7 +251,7 @@ class MainActivity : ComponentActivity() {
                                 isShowTimePicker.value = false
                                 viewModel.insertAlarmState(
                                     AlarmStateEntity(
-                                        hour = hourState.selectedItem,
+                                        hour = if (meridiemState.selectedItem == "오전" && hourState.selectedItem == 12) 0 else hourState.selectedItem,
                                         minute = minuteState.selectedItem.toInt(),
                                         meridiem = meridiemState.selectedItem,
                                         isActive = true
