@@ -47,7 +47,6 @@ fun Alarm(
             .fillMaxWidth()
             .background(shape = RoundedCornerShape(15.dp), color = Color(0xFFEEEEEE))
             .height(120.dp)
-            .padding(4.dp, 0.dp, 16.dp, 0.dp)
             .roundedRippleClickable(15.dp, onClick = {
                 if (isDeleteMode.value) {
                     isSelected.value = isSelected.value.not()
@@ -63,7 +62,8 @@ fun Alarm(
                 isDeleteMode.value = true
                 isSelected.value = true
                 onAlarmSelected()
-            }),
+            })
+            .padding(4.dp, 0.dp, 16.dp, 0.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
