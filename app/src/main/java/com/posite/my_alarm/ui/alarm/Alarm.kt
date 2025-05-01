@@ -34,13 +34,13 @@ fun Alarm(
     modifier: Modifier = Modifier,
     alarm: AlarmStateEntity,
     isDeleteMode: MutableState<Boolean>,
+    isSelected: Boolean,
     onAlarmSelected: () -> Unit,
-    onAlarmUnselected: (AlarmStateEntity) -> Unit,
+    onAlarmUnselected: () -> Unit,
     onSwitchChanges: (Boolean) -> Unit,
     onAlarmClicked: () -> Unit
 ) {
     val isChecked = remember { mutableStateOf(alarm.isActive) }
-    val isSelected = remember { mutableStateOf(false) }
     //Log.d("dp", "30dp: ${30.dp.value}")
     Row(
         modifier = modifier
@@ -49,18 +49,16 @@ fun Alarm(
             .height(120.dp)
             .roundedRippleClickable(15.dp, onClick = {
                 if (isDeleteMode.value) {
-                    isSelected.value = isSelected.value.not()
-                    if (isSelected.value) {
-                        onAlarmSelected()
+                    if (isSelected) {
+                        onAlarmUnselected()
                     } else {
-                        onAlarmUnselected(alarm)
+                        onAlarmSelected()
                     }
                 } else {
                     onAlarmClicked()
                 }
             }, onLongClick = {
                 isDeleteMode.value = true
-                isSelected.value = true
                 onAlarmSelected()
             })
             .padding(4.dp, 0.dp, 16.dp, 0.dp),
@@ -72,13 +70,12 @@ fun Alarm(
             if (isDeleteMode.value) {
                 RadioButton(
                     modifier = Modifier.height(30.dp),
-                    selected = isSelected.value,
+                    selected = isSelected,
                     onClick = {
-                        isSelected.value = isSelected.value.not()
-                        if (isSelected.value) {
-                            onAlarmSelected()
+                        if (isSelected) {
+                            onAlarmUnselected()
                         } else {
-                            onAlarmUnselected(alarm)
+                            onAlarmSelected()
                         }
                     })
             }

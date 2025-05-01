@@ -17,13 +17,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +39,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,7 +50,6 @@ import com.posite.my_alarm.icon.Add
 import com.posite.my_alarm.icon.Delete
 import com.posite.my_alarm.ui.alarm.Alarm
 import com.posite.my_alarm.ui.main.MainActivity.Companion.ALARM_MODE_TITLE
-import com.posite.my_alarm.ui.main.MainActivity.Companion.DELETE_MODE_TITLE
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
@@ -84,7 +88,11 @@ fun MinRemainAlarm(
         val date = getNextDate(minTime)
         val meridiem = if (date.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후"
         Text(
-            text = "${date.get(Calendar.MONTH) + 1}월 ${date.get(Calendar.DAY_OF_MONTH)}일 $meridiem ${
+            text = "${date.get(Calendar.MONTH) + 1}월 ${date.get(Calendar.DAY_OF_MONTH)}일 $meridiem (${
+                getDayOfWeek(
+                    date.get(Calendar.DAY_OF_WEEK)
+                )
+            }) ${
                 stringResource(
                     R.string.alarm_time,
                     if (date.get(Calendar.HOUR_OF_DAY) == 0) 12 else date.get(Calendar.HOUR),
@@ -140,7 +148,23 @@ fun AlarmList(
             .padding(0.dp, 40.dp, 0.dp, 12.dp)
             .background(color = Color.White)
     ) {
-        AlarmListTitle(isDeleteMode, set, isShowTimePicker, onRemoveAlarm)
+        val selectedAlarms = remember { mutableStateOf(mutableSetOf<AlarmStateEntity>()) }
+        val isSelectedAll = remember(selectedAlarms.value) {
+            derivedStateOf {
+                alarmList.isNotEmpty() && selectedAlarms.value.size == alarmList.size
+            }
+        }
+        selectedAlarms.value = set
+        AlarmListTitle(
+            selectedAlarms,
+            alarmList,
+            isDeleteMode,
+            set,
+            isShowTimePicker,
+            isSelectedAll,
+            onRemoveAlarm
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -154,6 +178,7 @@ fun AlarmList(
             ) {
                 items(items = alarmList, key = { it.id }) { item ->
                     //Log.d("MainActivity", "item: $item")
+
                     Alarm(
                         modifier = Modifier.animateItem(
                             fadeInSpec = tween(
@@ -167,12 +192,21 @@ fun AlarmList(
                         ),
                         alarm = item,
                         isDeleteMode = isDeleteMode,
+                        isSelected = selectedAlarms.value.contains(item),
                         onAlarmSelected = {
                             set.add(item)
+                            val newSet = selectedAlarms.value.toMutableSet()
+                            newSet.add(item)
+                            selectedAlarms.value = newSet
+                            //isSelected.value = true
                             Log.d("MainActivity", "set: $set")
                         },
                         onAlarmUnselected = {
-                            set.remove(it)
+                            set.remove(item)
+                            val newSet = selectedAlarms.value.toMutableSet()
+                            newSet.remove(item)
+                            selectedAlarms.value = newSet
+                            //isSelected.value = false
                             Log.d("MainActivity", "set: $set")
                         },
                         onSwitchChanges = {
@@ -193,10 +227,13 @@ fun AlarmList(
 
 @Composable
 fun AlarmListTitle(
+    selectedAlarms: MutableState<MutableSet<AlarmStateEntity>>,
+    alarmList: List<AlarmStateEntity>,
     isDeleteMode: MutableState<Boolean>,
     set: MutableSet<AlarmStateEntity>,
     isShowTimePicker: MutableState<Boolean>,
-    removeAlarm: (AlarmStateEntity) -> Unit,
+    isSelectedAll: State<Boolean>,
+    removeAlarm: (AlarmStateEntity) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -205,11 +242,61 @@ fun AlarmListTitle(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = if (isDeleteMode.value) DELETE_MODE_TITLE else ALARM_MODE_TITLE,
-            fontSize = 24.sp,
-            fontWeight = Bold
-        )
+        if (isDeleteMode.value) {
+            Column(
+                modifier = Modifier.selectable(
+                    selected = isSelectedAll.value,
+                    onClick = {
+                        if (isSelectedAll.value) {
+                            selectedAlarms.value = mutableSetOf()
+                            set.clear()
+                            Log.d("MainActivity", "set: $set")
+                            Log.d("MainActivity", "selectedAlarms: ${selectedAlarms.value}")
+                            Log.d("MainActivity", "isSelectedAll: ${isSelectedAll.value}")
+                        } else {
+                            selectedAlarms.value = alarmList.toMutableSet()
+                            set.addAll(alarmList)
+                            Log.d("MainActivity", "set: $set")
+                            Log.d("MainActivity", "selectedAlarms: ${selectedAlarms.value}")
+                            Log.d("MainActivity", "isSelectedAll: ${isSelectedAll.value}")
+                        }
+                    },
+                    role = Role.RadioButton
+                )
+            ) {
+                RadioButton(
+                    modifier = Modifier.size(30.dp),
+                    selected = isSelectedAll.value,
+                    onClick = {
+                        if (isSelectedAll.value) {
+                            selectedAlarms.value = mutableSetOf()
+                            set.clear()
+                            Log.d("MainActivity", "set: $set")
+                            Log.d("MainActivity", "selectedAlarms: ${selectedAlarms.value}")
+                            Log.d("MainActivity", "isSelectedAll: ${isSelectedAll.value}")
+                        } else {
+                            selectedAlarms.value = alarmList.toMutableSet()
+                            set.addAll(alarmList)
+                            Log.d("MainActivity", "set: $set")
+                            Log.d("MainActivity", "selectedAlarms: ${selectedAlarms.value}")
+                            Log.d("MainActivity", "isSelectedAll: ${isSelectedAll.value}")
+                        }
+                    }
+                )
+                Text(
+                    text = "전체",
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+            }
+        } else {
+            Text(
+                text = ALARM_MODE_TITLE,
+                fontSize = 24.sp,
+                fontWeight = Bold
+            )
+        }
+
         IconButton(
             modifier = Modifier.background(
                 shape = CircleShape,
@@ -262,6 +349,19 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
         calendar.add(Calendar.DAY_OF_YEAR, 1)
     }
     return calendar
+}
+
+fun getDayOfWeek(day: Int): String {
+    return when (day) {
+        1 -> "일"
+        2 -> "월"
+        3 -> "화"
+        4 -> "수"
+        5 -> "목"
+        6 -> "금"
+        7 -> "토"
+        else -> ""
+    }
 }
 
 @Preview(showBackground = true)
