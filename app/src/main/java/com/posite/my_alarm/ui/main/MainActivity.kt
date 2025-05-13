@@ -1,15 +1,13 @@
 package com.posite.my_alarm.ui.main
 
-import android.Manifest.permission
+import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -18,6 +16,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -40,7 +39,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -53,6 +51,9 @@ import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
+import com.posite.my_alarm.util.permission.ExactAlarmPermission
+import com.posite.my_alarm.util.permission.NotificationPermission
+import com.posite.my_alarm.util.permission.OverlayPermission
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,18 +66,27 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                startActivity(intent)
+        enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (alarmManager.canScheduleExactAlarms().not()) {
+                ExactAlarmPermission(this).onSuccess { }.onDeny { permissions ->
+                    Log.d("MainActivity", "onDeny: $permissions")
+                }.request()
+
+            }
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED) {
+                NotificationPermission(this).onSuccess { }.onDeny { permissions ->
+                    Log.d("MainActivity", "onDeny: $permissions")
+                }.request()
+            }
+            if (Settings.canDrawOverlays(this).not()) {
+                OverlayPermission(this).onSuccess { }.onDeny { permissions ->
+                    Log.d("MainActivity", "onDeny: $permissions")
+                }.request()
             }
         }
-        askNotificationPermission()
 
-        if (alertPermissionCheck(this)) {
-            onObtainingPermissionOverlayWindow(this)
-        }
         viewModel.getAlarmList()
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         onEffect()
@@ -386,31 +396,6 @@ class MainActivity : ComponentActivity() {
     ) {
         removeAlarm(intent)
         addAlarm(meridiemState, hourState, minuteState, intent)
-    }
-
-    private fun askNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(arrayOf(permission.POST_NOTIFICATIONS), 1000)
-            }
-        }
-    }
-
-    private fun onObtainingPermissionOverlayWindow(context: Activity) {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            Uri.parse("package:" + context.packageName)
-        )
-        context.startActivityForResult(intent, 0)
-    }
-
-
-    private fun alertPermissionCheck(context: Context?): Boolean {
-        return !Settings.canDrawOverlays(context)
     }
 
     override fun onRequestPermissionsResult(
