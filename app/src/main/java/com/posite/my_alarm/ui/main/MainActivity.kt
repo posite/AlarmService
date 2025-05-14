@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
@@ -31,6 +32,7 @@ import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.String.format
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -94,19 +96,21 @@ class MainActivity : ComponentActivity() {
                                     }
                             )
                         } else {
-                            removeAlarm(Intent(context, AlarmReceiver::class.java).putExtra(
-                                ALARM_ID,
-                                item.id
-                            ).putExtra(ALARM_MERIDIEM, item.meridiem)
-                                .putExtra(ALARM_HOUR, item.hour)
-                                .putExtra(ALARM_MINUTE, item.minute).let { intent ->
-                                    PendingIntent.getBroadcast(
-                                        context,
-                                        item.id.toInt(),
-                                        intent,
-                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                                    )
-                                })
+                            removeAlarm(
+                                Intent(context, AlarmReceiver::class.java).putExtra(
+                                    ALARM_ID,
+                                    item.id
+                                ).putExtra(ALARM_MERIDIEM, item.meridiem)
+                                    .putExtra(ALARM_HOUR, item.hour)
+                                    .putExtra(ALARM_MINUTE, item.minute).let { intent ->
+                                        PendingIntent.getBroadcast(
+                                            context,
+                                            item.id.toInt(),
+                                            intent,
+                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                        )
+                                    }, item
+                            )
                         }
                         viewModel.updateAlarmState(item.copy(isActive = item.isActive.not()))
                         Log.d(
@@ -122,7 +126,7 @@ class MainActivity : ComponentActivity() {
                                 intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                             )
-                        })
+                        }, alarm, DELETE_ALARM)
                         viewModel.deleteAlarmState(alarm)
                     },
                     updateAlarm = {
@@ -233,7 +237,8 @@ class MainActivity : ComponentActivity() {
         meridiemState: String,
         hourState: Int,
         minuteState: String,
-        intent: PendingIntent
+        intent: PendingIntent,
+        isUpdated: Boolean = NOT_UPDATE
     ) {
         val alarmMills = getNextDate(
             AlarmStateEntity(
@@ -245,15 +250,65 @@ class MainActivity : ComponentActivity() {
         ).timeInMillis
 
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")
-        Toast.makeText(
-            this,
-            "$meridiemState ${hourState}시 ${minuteState}분 알람이 설정되었습니다.",
-            Toast.LENGTH_SHORT
-        ).show()
+        if (isUpdated) {
+            Toast.makeText(
+                this,
+                format(
+                    getString(R.string.update_alarm_toast),
+                    meridiemState,
+                    hourState,
+                    minuteState.toInt()
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                format(
+                    getString(R.string.add_alarm_toast),
+                    meridiemState,
+                    hourState,
+                    minuteState.toInt()
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             alarmMills, intent
         )
+    }
+
+    private fun removeAlarm(
+        intent: PendingIntent,
+        alarm: AlarmStateEntity,
+        isDeleted: Boolean = CANCEL_ALARM
+    ) {
+        alarmManager.cancel(intent)
+        if (isDeleted) {
+            Toast.makeText(
+                this,
+                format(
+                    getString(R.string.delete_alarm_toast),
+                    alarm.meridiem,
+                    alarm.hour,
+                    alarm.minute
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                format(
+                    getString(R.string.cancel_alarm_toast),
+                    alarm.meridiem,
+                    alarm.hour,
+                    alarm.minute
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun removeAlarm(intent: PendingIntent) {
@@ -267,7 +322,7 @@ class MainActivity : ComponentActivity() {
         intent: PendingIntent
     ) {
         removeAlarm(intent)
-        addAlarm(meridiemState, hourState, minuteState, intent)
+        addAlarm(meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
     }
 
     override fun onRequestPermissionsResult(
@@ -300,5 +355,9 @@ class MainActivity : ComponentActivity() {
         const val DEFAULT_MINUTE = "00"
         const val DEFAULT_MODE_STATE = false
         const val ALARM_MODE_TITLE = "알람"
+        private const val UPDATE_ALARM = true
+        private const val NOT_UPDATE = false
+        private const val DELETE_ALARM = true
+        private const val CANCEL_ALARM = false
     }
 }
