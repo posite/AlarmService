@@ -1,15 +1,21 @@
 package com.posite.my_alarm.ui.main
 
+import android.Manifest
+import android.app.AlarmManager
+import android.content.pm.PackageManager
 import android.icu.util.Calendar
+import android.os.Build
+import android.provider.Settings
 import android.util.Log
+import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,8 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
@@ -34,8 +42,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -44,26 +54,192 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat.checkSelfPermission
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
+import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.icon.Add
 import com.posite.my_alarm.icon.Delete
 import com.posite.my_alarm.ui.alarm.Alarm
 import com.posite.my_alarm.ui.main.MainActivity.Companion.ALARM_MODE_TITLE
+import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_HOUR
+import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MERIDIEM
+import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
+import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
+import com.posite.my_alarm.ui.picker.TimePickerDialog
+import com.posite.my_alarm.util.permission.ExactAlarmPermission
+import com.posite.my_alarm.util.permission.NotificationPermission
+import com.posite.my_alarm.util.permission.OverlayPermission
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
 @Composable
+fun MainView(
+    isDeleteMode: MutableState<Boolean>,
+    isAlarmClick: MutableState<AlarmStateEntity?>,
+    meridiemState: PickerState<String>,
+    hourState: PickerState<Int>,
+    minuteState: PickerState<String>,
+    alarmManager: AlarmManager,
+    activity: ComponentActivity,
+    states: MainContract.MainUiState,
+    onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
+    deleteAlarm: (AlarmStateEntity) -> Unit,
+    updateAlarm: () -> Unit,
+    insertAlarm: () -> Unit,
+) {
+    var minTime by remember { mutableStateOf<AlarmStateEntity?>(null) }
+    val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
+    val set = mutableSetOf<AlarmStateEntity>()
+
+    var isTitleVisible by remember { mutableStateOf(true) }
+
+    val scrollState = rememberScrollState()
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                val delta = available.y
+                return if (delta < 0 && scrollState.value < scrollState.maxValue) {
+                    // 위로 스크롤할 때, 상단 영역 스크롤이 최대치에 도달하지 않았다면 상단 영역을 스크롤
+                    isTitleVisible = false
+                    scrollState.dispatchRawDelta(-delta)
+                    Offset(0f, delta)
+                } else if (delta > 0 && scrollState.value > 0) {
+                    // 아래로 스크롤할 때, 상단 영역이 완전히 보이지 않는다면 상단 영역을 스크롤
+                    isTitleVisible = true
+                    val consume = minOf(scrollState.value.toFloat(), delta)
+                    scrollState.dispatchRawDelta(-consume)
+                    Offset(0f, consume)
+                } else {
+                    Offset.Zero
+                }
+            }
+        }
+    }
+    requestPermission(activity, alarmManager)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.White)
+            .verticalScroll(scrollState),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        LaunchedEffect(states) {
+            Log.d("MainActivity", "states: ${states.alarmList}")
+            minTime = if (states.alarmList.isEmpty().not()) {
+                states.alarmList.filter { it.isActive }
+                    .minByOrNull { getNextDate(it).timeInMillis }
+            } else null
+        }
+
+        Spacer(modifier = Modifier.height(60.dp))
+        MinRemainAlarm(scrollState.value, minTime)
+
+        Spacer(modifier = Modifier.height(24.dp))
+        AlarmList(states.alarmList,
+            isDeleteMode,
+            set,
+            isShowTimePicker,
+            nestedScrollConnection,
+            isAlarmClick,
+            onSwitchChanges = { isActive, item ->
+                onSwitchChanges(isActive, item)
+            },
+            onRemoveAlarm = { alarm ->
+                deleteAlarm(alarm)
+            }
+        )
+
+        if (isAlarmClick.value != null) {
+            meridiemState.selectedItem = isAlarmClick.value!!.meridiem
+            hourState.selectedItem = isAlarmClick.value!!.hour
+            minuteState.selectedItem = isAlarmClick.value!!.minute.toString()
+            TimePickerDialog(
+                meridiem = isAlarmClick.value!!.meridiem,
+                hour = isAlarmClick.value!!.hour,
+                minute = isAlarmClick.value!!.minute,
+                modifier = Modifier.background(color = Color.White),
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true,
+                ),
+                onDismissRequest = { isAlarmClick.value = null },
+                onDoneClickListener = {
+                    updateAlarm()
+                    isAlarmClick.value = null
+                },
+                meridiemState = meridiemState,
+                hourState = hourState,
+                minuteState = minuteState
+            )
+        }
+        if (isShowTimePicker.value) {
+            meridiemState.selectedItem = DEFAULT_MERIDIEM
+            hourState.selectedItem = DEFAULT_HOUR
+            minuteState.selectedItem = DEFAULT_MINUTE
+            TimePickerDialog(
+                modifier = Modifier.background(color = Color.White),
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true,
+                ),
+                onDismissRequest = { isShowTimePicker.value = false },
+                onDoneClickListener = {
+                    isShowTimePicker.value = false
+                    insertAlarm()
+                },
+                meridiemState = meridiemState,
+                hourState = hourState,
+                minuteState = minuteState,
+                meridiem = DEFAULT_MERIDIEM,
+                hour = DEFAULT_HOUR,
+                minute = DEFAULT_MINUTE.toInt()
+            )
+        }
+    }
+}
+
+
+fun requestPermission(activity: ComponentActivity, alarmManager: AlarmManager) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (alarmManager.canScheduleExactAlarms().not()) {
+            ExactAlarmPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
+
+        }
+        if (checkSelfPermission(
+                activity,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            NotificationPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
+        }
+        if (Settings.canDrawOverlays(activity).not()) {
+            OverlayPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
+        }
+    }
+}
+
+@Composable
 fun MinRemainAlarm(
-    scrollState: ScrollState,
+    scrollValue: Int,
     minTime: AlarmStateEntity?
 ) {
-    val alpha = 1f - (scrollState.value.toFloat() / 350f).coerceIn(0f, 1f)
+    val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
     var remainMinute by remember { mutableStateOf(0) }
 
     if (minTime != null) {
-        Log.d("MainActivity", "minTime: $minTime")
         LaunchedEffect(Unit) {
             while (true) {
                 delay(1000)

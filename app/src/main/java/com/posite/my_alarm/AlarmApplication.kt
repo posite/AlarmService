@@ -13,6 +13,7 @@ class AlarmApplication : Application() {
 
     @Inject
     lateinit var alarmStateDao: AlarmStateDao
+
     override fun onCreate() {
         super.onCreate()
         timeRepository = TimeRepository(alarmStateDao)
