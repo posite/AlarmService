@@ -71,7 +71,6 @@ import com.posite.my_alarm.ui.picker.TimePickerDialog
 import com.posite.my_alarm.util.permission.ExactAlarmPermission
 import com.posite.my_alarm.util.permission.NotificationPermission
 import com.posite.my_alarm.util.permission.OverlayPermission
-import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
 @Composable
@@ -240,13 +239,16 @@ fun MinRemainAlarm(
     var remainMinute by remember { mutableStateOf(0) }
 
     if (minTime != null) {
-        LaunchedEffect(Unit) {
-            while (true) {
+        LaunchedEffect(minTime) {
+            /*while (true) {
                 delay(1000)
                 val time = checkTimeChange(minTime)
                 remainHour = time.first
                 remainMinute = time.second
-            }
+            }*/
+            val time = checkTimeChange(minTime)
+            remainHour = time.first
+            remainMinute = time.second
         }
 
         Text(
