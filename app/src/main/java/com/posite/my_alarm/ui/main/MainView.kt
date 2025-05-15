@@ -71,6 +71,7 @@ import com.posite.my_alarm.ui.picker.TimePickerDialog
 import com.posite.my_alarm.util.permission.ExactAlarmPermission
 import com.posite.my_alarm.util.permission.NotificationPermission
 import com.posite.my_alarm.util.permission.OverlayPermission
+import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
 @Composable
@@ -130,10 +131,13 @@ fun MainView(
     ) {
         LaunchedEffect(states) {
             Log.d("MainActivity", "states: ${states.alarmList}")
-            minTime = if (states.alarmList.isEmpty().not()) {
-                states.alarmList.filter { it.isActive }
-                    .minByOrNull { getNextDate(it).timeInMillis }
-            } else null
+            while (true) {
+                delay(1000)
+                minTime = if (states.alarmList.isEmpty().not()) {
+                    states.alarmList.filter { it.isActive }
+                        .minByOrNull { getNextDate(it).timeInMillis }
+                } else null
+            }
         }
 
         Spacer(modifier = Modifier.height(60.dp))
