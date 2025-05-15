@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.posite.my_alarm.util.SlidePosition
+import com.posite.my_alarm.util.dpToFloat
 import kotlin.math.roundToInt
 
 
@@ -56,7 +57,7 @@ fun SwipeUnlockButton(
     }
     val density = LocalDensity.current
     val splineBasedDecay = rememberSplineBasedDecay<Float>()
-    var half = with(density) { (componentSize.width - 60.dp.toPx()) / 2 }
+    var size = with(density) { (componentSize.width - 30.dp.toPx()) }
     val state = remember {
         AnchoredDraggableState(
             initialValue = SlidePosition.Start,
@@ -68,8 +69,8 @@ fun SwipeUnlockButton(
     }
     LaunchedEffect(componentSize) {
         if (componentSize.width > 0) {
-            val endPosition = with(density) { (componentSize.width - 60.dp.toPx()) }
-            half = with(density) { (componentSize.width - 60.dp.toPx()) / 2 }
+            val endPosition = with(density) { (componentSize.width - 30.dp.toPx()) }
+            size = with(density) { (componentSize.width - 30.dp.toPx()) }
             state.updateAnchors(
                 DraggableAnchors {
                     SlidePosition.Start at -0f
@@ -82,16 +83,17 @@ fun SwipeUnlockButton(
         mutableStateOf("밀어서 잠금 해제")
     }
     //Log.d("SwipeUnlockButton", "end: ${(componentSize.width - dpToFloat(60.dp))}")
-    LaunchedEffect(state.currentValue) {
+    LaunchedEffect(state.offset) {
         Log.d(
             "SwipeUnlockButton",
-            "currentValue: ${state.currentValue}  offset: ${state.offset}  half: $half"
+            "currentValue: ${state.currentValue}  offset: ${state.offset}  size: $size"
         )
-        if (state.currentValue == SlidePosition.Start && state.offset > half) {
-            state.snapTo(SlidePosition.End)
-        }
 
-        if (state.offset > half) {
+        if(state.offset >= size - with(density){45.dp.toPx()}) {
+            Log.d(
+                "SwipeUnlockButton",
+                "currentValue: ${state.currentValue}  offset: ${state.offset}  size: $size"
+            )
             swipeText = "잠금 해제 완료"
             onSwipe()
         } else {
