@@ -9,11 +9,17 @@ import android.icu.util.Calendar
 import android.os.Build
 import android.util.Log
 import com.posite.my_alarm.ui.lock.LockActivity
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class AlarmReceiver : BroadcastReceiver() {
+    @Inject
+    lateinit var alarmManager: AlarmManager
+
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getLongExtra(ALARM_ID, 0)
         val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: "오전"
@@ -41,8 +47,6 @@ class AlarmReceiver : BroadcastReceiver() {
         hour: Int,
         minute: Int
     ) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
         val intent = Intent(context, AlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
