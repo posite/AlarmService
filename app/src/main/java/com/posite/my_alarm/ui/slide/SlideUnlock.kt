@@ -1,6 +1,5 @@
 package com.posite.my_alarm.ui.slide
 
-import android.util.Log
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -9,7 +8,6 @@ import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
-import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +40,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.posite.my_alarm.util.SlidePosition
-import com.posite.my_alarm.util.dpToFloat
 import kotlin.math.roundToInt
 
 
@@ -57,7 +54,7 @@ fun SwipeUnlockButton(
     }
     val density = LocalDensity.current
     val splineBasedDecay = rememberSplineBasedDecay<Float>()
-    var size = with(density) { (componentSize.width - 30.dp.toPx()) }
+    var size = with(density) { (componentSize.width - 60.dp.toPx()) }
     val state = remember {
         AnchoredDraggableState(
             initialValue = SlidePosition.Start,
@@ -67,10 +64,11 @@ fun SwipeUnlockButton(
             decayAnimationSpec = splineBasedDecay
         )
     }
+    var prevTargetValue by remember { mutableStateOf<SlidePosition?>(null) }
     LaunchedEffect(componentSize) {
         if (componentSize.width > 0) {
-            val endPosition = with(density) { (componentSize.width - 30.dp.toPx()) }
-            size = with(density) { (componentSize.width - 30.dp.toPx()) }
+            val endPosition = with(density) { (componentSize.width - 60.dp.toPx()) }
+            size = with(density) { (componentSize.width - 60.dp.toPx()) }
             state.updateAnchors(
                 DraggableAnchors {
                     SlidePosition.Start at -0f
@@ -83,22 +81,17 @@ fun SwipeUnlockButton(
         mutableStateOf("밀어서 잠금 해제")
     }
     //Log.d("SwipeUnlockButton", "end: ${(componentSize.width - dpToFloat(60.dp))}")
-    LaunchedEffect(state.offset) {
-        Log.d(
-            "SwipeUnlockButton",
-            "currentValue: ${state.currentValue}  offset: ${state.offset}  size: $size"
-        )
-
-        if(state.offset >= size - with(density){45.dp.toPx()}) {
-            Log.d(
-                "SwipeUnlockButton",
-                "currentValue: ${state.currentValue}  offset: ${state.offset}  size: $size"
-            )
+    LaunchedEffect(state.currentValue, state.targetValue, state.isAnimationRunning) {
+        if (!state.isAnimationRunning && prevTargetValue == SlidePosition.End && state.offset >= size - with(
+                density
+            ) { 45.dp.toPx() }
+        ) {
             swipeText = "잠금 해제 완료"
             onSwipe()
-        } else {
-            swipeText = "밀어서 잠금 해제"
         }
+
+        //if(state.)
+        prevTargetValue = state.targetValue
     }
 
 
