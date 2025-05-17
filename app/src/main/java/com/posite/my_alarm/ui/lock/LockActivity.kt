@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.slide.CircleUnlock
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Date
@@ -113,8 +114,14 @@ class LockActivity : ComponentActivity() {
                             modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
                         )
                     }
-                    SwipeUnlockButton {
+                    /*SwipeUnlockButton {
                         Log.d("LockActivity", "SwipeUnlockButton clicked")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
+                        else (vibrator as Vibrator).cancel()
+
+                        finish()
+                    }*/
+                    CircleUnlock {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
                         else (vibrator as Vibrator).cancel()
 
@@ -169,6 +176,9 @@ fun GreetingPreview() {
                     fontSize = 32.sp,
                     modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
                 )
+            }
+            CircleUnlock {
+
             }
             SwipeUnlockButton {
 
