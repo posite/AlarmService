@@ -76,12 +76,13 @@ class LockActivity : ComponentActivity() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(color = Color.White),
+                        .background(color = Color.Transparent),
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(color = Color.White),
+                            .background(color = Color.Transparent),
+                        //.background(color = Color.White)
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -141,12 +142,14 @@ fun GreetingPreview() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.White),
+                .background(color = Color.Transparent),
+            //.background(color = Color.White),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color = Color.White),
+                    .background(color = Color.Transparent),
+                //.background(color = Color.White)
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

@@ -24,7 +24,7 @@
             android:name=".ui.lock.LockActivity"
             android:exported="false"
             android:label="@string/title_activity_lock"
-            android:theme="@style/Theme.MyAlarm" />
+            android:theme="@style/Base.Theme.MyAlarm" />
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true"
