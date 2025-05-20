@@ -1,5 +1,6 @@
 package com.posite.my_alarm.util
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -9,9 +10,8 @@ import androidx.work.WorkManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class BootReceiver : HiltBroadcastReceiver() {
+class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
             Log.d("Boot completed", "Boot completed")
             val work =

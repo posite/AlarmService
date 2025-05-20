@@ -92,11 +92,14 @@ class LockActivity : ComponentActivity() {
                         LaunchedEffect(Unit) {
                             while (true) {
                                 currentDate =
-                                    SimpleDateFormat("yyyy년 MM월 dd일", Locale.getDefault()).format(
+                                    SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(
                                         Date()
                                     )
                                 currentTime =
-                                    SimpleDateFormat("aa hh:mm", Locale.getDefault()).format(Date())
+                                    SimpleDateFormat(
+                                        TIME_FORMAT,
+                                        Locale.getDefault()
+                                    ).format(Date())
                                 kotlinx.coroutines.delay(1000) // 1초마다 업데이트
                             }
                         }
@@ -131,6 +134,11 @@ class LockActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val DATE_FORMAT = "yyyy년 MM월 dd일"
+        private const val TIME_FORMAT = "aa hh:mm"
     }
 }
 
