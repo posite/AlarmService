@@ -8,4 +8,6 @@
     <string name="cancel_alarm_toast">"%s %d시 %d분 알람이 취소되었습니다."</string>
     <string name="delete_alarm_toast">"%s %d시 %d분 알람이 삭제되었습니다."</string>
     <string name="update_alarm_toast">"%s %d시 %d분 으로 알람이 변경되었습니다."</string>
+    <string name="am">"오전"</string>
+    <string name="pm">"오후"</string>
 </resources>

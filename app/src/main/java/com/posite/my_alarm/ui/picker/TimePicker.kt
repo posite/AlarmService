@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -37,9 +38,9 @@ fun TimePicker(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val context = LocalContext.current
         val visibleItemMiddle = remember { 3 / 2 }
-        val adjustedMeridiem = listOf("오전", "오후")
-        val startIndex = remember { if (meridiem == "오후") 1 else 0 }
+        val startIndex = remember { if (meridiem == context.getString(R.string.pm)) 1 else 0 }
         val listMeridiemState = rememberLazyListState(initialFirstVisibleItemIndex = startIndex)
 
         val adjustedHour = (1..12).toList()
@@ -59,7 +60,7 @@ fun TimePicker(
                     snapshotFlow { listHourState.firstVisibleItemIndex }.collect { index ->
                         when {
                             index > prevIndex && hourState.selectedItem == 12 -> {
-                                if (meridiemState.selectedItem == "오전") {
+                                if (meridiemState.selectedItem == context.getString(R.string.am)) {
                                     listMeridiemState.animateScrollToItem(1)
                                 } else {
                                     listMeridiemState.animateScrollToItem(0)
@@ -67,7 +68,7 @@ fun TimePicker(
                             }
 
                             index < prevIndex && hourState.selectedItem == 11 -> {
-                                if (meridiemState.selectedItem == "오후") {
+                                if (meridiemState.selectedItem == context.getString(R.string.pm)) {
                                     listMeridiemState.animateScrollToItem(0)
                                 } else {
                                     listMeridiemState.animateScrollToItem(1)
@@ -87,13 +88,13 @@ fun TimePicker(
             modifier = Modifier
                 .width(60.dp)
                 .height(120.dp),
-            items = listOf("오전", "오후"),
+            items = listOf(stringResource(R.string.am), stringResource(R.string.pm)),
             state = meridiemState,
             textStyle = TextStyle(fontSize = 24.sp),
             selectedTextStyle = TextStyle(fontSize = 24.sp),
             visibleItemsCount = 2,
             isInfinity = false,
-            startIndex = if (meridiem == "오후") 1 else 0,
+            startIndex = if (meridiem == stringResource(R.string.pm)) 1 else 0,
             lazyListState = listMeridiemState
         )
 

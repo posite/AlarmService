@@ -95,7 +95,7 @@ fun Alarm(
             Text(
                 text = stringResource(
                     R.string.alarm_time,
-                    if (alarm.meridiem == "오전" && alarm.hour == 0) 12 else alarm.hour,
+                    if (alarm.meridiem == stringResource(R.string.am) && alarm.hour == 0) 12 else alarm.hour,
                     alarm.minute
                 ),
                 fontSize = 32.sp,

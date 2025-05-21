@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Build
+import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 
 object AlarmScheduler {
@@ -22,7 +23,7 @@ object AlarmScheduler {
         )
         val calendar: Calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
-            if (alarm.meridiem == "오후") {
+            if (alarm.meridiem == context.getString(R.string.pm)) {
                 if (alarm.hour == 12) {
                     set(Calendar.HOUR_OF_DAY, alarm.hour)
                 } else {

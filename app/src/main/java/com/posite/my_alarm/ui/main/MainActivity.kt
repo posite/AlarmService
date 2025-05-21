@@ -143,7 +143,7 @@ class MainActivity : ComponentActivity() {
                     insertAlarm = {
                         viewModel.insertAlarmState(
                             AlarmStateEntity(
-                                hour = if (meridiemState.selectedItem == "오전" && hourState.selectedItem == 12) 0 else hourState.selectedItem,
+                                hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
                                 minute = minuteState.selectedItem.toInt(),
                                 meridiem = meridiemState.selectedItem,
                                 isActive = true
@@ -245,8 +245,9 @@ class MainActivity : ComponentActivity() {
                 hour = hourState,
                 minute = minuteState.toInt(),
                 meridiem = meridiemState,
-                isActive = true
-            )
+                isActive = true,
+            ),
+            this
         ).timeInMillis
 
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")

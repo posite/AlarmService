@@ -8,6 +8,7 @@ import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Build
 import android.util.Log
+import com.posite.my_alarm.R
 import com.posite.my_alarm.ui.lock.LockActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +23,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getLongExtra(ALARM_ID, 0)
-        val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: "오전"
+        val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: context.getString(R.string.am)
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
         context.startActivity(
@@ -58,7 +59,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val calendar: Calendar = Calendar.getInstance().apply {
             timeInMillis = System.currentTimeMillis()
             add(Calendar.DAY_OF_YEAR, 1)
-            if (meridiem == "오후") {
+            if (meridiem == context.getString(R.string.pm)) {
                 if (hour == 12) {
                     set(Calendar.HOUR_OF_DAY, hour)
                 } else {

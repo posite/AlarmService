@@ -2,6 +2,7 @@ package com.posite.my_alarm.ui.main
 
 import android.Manifest
 import android.app.AlarmManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.icu.util.Calendar
 import android.os.Build
@@ -48,6 +49,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -89,6 +91,7 @@ fun MainView(
     updateAlarm: () -> Unit,
     insertAlarm: () -> Unit,
 ) {
+    val context = LocalContext.current
     var minTime by remember { mutableStateOf<AlarmStateEntity?>(null) }
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
@@ -135,7 +138,7 @@ fun MainView(
                 delay(1000)
                 minTime = if (states.alarmList.isEmpty().not()) {
                     states.alarmList.filter { it.isActive }
-                        .minByOrNull { getNextDate(it).timeInMillis }
+                        .minByOrNull { getNextDate(it, context).timeInMillis }
                 } else null
             }
         }
@@ -241,6 +244,7 @@ fun MinRemainAlarm(
     val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
     var remainMinute by remember { mutableStateOf(0) }
+    val context = LocalContext.current
 
     if (minTime != null) {
         LaunchedEffect(minTime) {
@@ -250,7 +254,7 @@ fun MinRemainAlarm(
                 remainHour = time.first
                 remainMinute = time.second
             }*/
-            val time = checkTimeChange(minTime)
+            val time = checkTimeChange(minTime, context)
             remainHour = time.first
             remainMinute = time.second
         }
@@ -267,8 +271,11 @@ fun MinRemainAlarm(
             fontSize = 32.sp,
             color = Color.Black.copy(alpha)
         )
-        val date = getNextDate(minTime)
-        val meridiem = if (date.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후"
+        val date = getNextDate(minTime, context)
+        val meridiem =
+            if (date.get(Calendar.AM_PM) == Calendar.AM) stringResource(R.string.am) else stringResource(
+                R.string.pm
+            )
         Text(
             text = "${date.get(Calendar.MONTH) + 1}월 ${date.get(Calendar.DAY_OF_MONTH)}일 $meridiem (${
                 getDayOfWeek(
@@ -295,10 +302,10 @@ fun MinRemainAlarm(
     }
 }
 
-private fun checkTimeChange(minTime: AlarmStateEntity): Pair<Int, Int> {
+private fun checkTimeChange(minTime: AlarmStateEntity, context: Context): Pair<Int, Int> {
     val localDateTime = LocalDateTime.now()
     var hour = minTime.hour - localDateTime.hour
-    if (minTime.meridiem == "오후") {
+    if (minTime.meridiem == context.getString(R.string.pm)) {
         hour += 12
     }
     var minute = minTime.minute - localDateTime.minute
@@ -507,10 +514,10 @@ fun AlarmListTitle(
     }
 }
 
-fun getNextDate(alarm: AlarmStateEntity): Calendar {
+fun getNextDate(alarm: AlarmStateEntity, context: Context): Calendar {
     val calendar: Calendar = Calendar.getInstance().apply {
         timeInMillis = System.currentTimeMillis()
-        if (alarm.meridiem == "오후") {
+        if (alarm.meridiem == context.getString(R.string.pm)) {
             if (alarm.hour == 12) {
                 set(Calendar.HOUR_OF_DAY, alarm.hour)
             } else {

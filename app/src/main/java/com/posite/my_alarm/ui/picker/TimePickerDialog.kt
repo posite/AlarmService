@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.posite.my_alarm.R
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 
@@ -113,10 +115,10 @@ fun TimePickerDialogPreview() {
             onDoneClickListener = {
 
             },
-            meridiemState = PickerState("오전"),
+            meridiemState = PickerState(stringResource(R.string.am)),
             hourState = PickerState(6),
             minuteState = PickerState("00"),
-            meridiem = "오전",
+            meridiem = stringResource(R.string.am),
             hour = 6,
             minute = 0,
         )
