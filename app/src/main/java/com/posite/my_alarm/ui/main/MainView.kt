@@ -1,14 +1,8 @@
 package com.posite.my_alarm.ui.main
 
-import android.Manifest
-import android.app.AlarmManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.icu.util.Calendar
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -57,7 +51,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat.checkSelfPermission
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
@@ -70,9 +63,6 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MERIDIEM
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.TimePickerDialog
-import com.posite.my_alarm.util.permission.ExactAlarmPermission
-import com.posite.my_alarm.util.permission.NotificationPermission
-import com.posite.my_alarm.util.permission.OverlayPermission
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 
@@ -83,8 +73,6 @@ fun MainView(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
     minuteState: PickerState<String>,
-    alarmManager: AlarmManager,
-    activity: ComponentActivity,
     states: MainContract.MainUiState,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
@@ -123,7 +111,6 @@ fun MainView(
             }
         }
     }
-    requestPermission(activity, alarmManager)
 
     Column(
         modifier = Modifier
@@ -210,31 +197,6 @@ fun MainView(
     }
 }
 
-
-fun requestPermission(activity: ComponentActivity, alarmManager: AlarmManager) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        if (alarmManager.canScheduleExactAlarms().not()) {
-            ExactAlarmPermission(activity).onSuccess { }.onDeny { permissions ->
-                Log.d("MainActivity", "onDeny: $permissions")
-            }.request()
-
-        }
-        if (checkSelfPermission(
-                activity,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_DENIED
-        ) {
-            NotificationPermission(activity).onSuccess { }.onDeny { permissions ->
-                Log.d("MainActivity", "onDeny: $permissions")
-            }.request()
-        }
-        if (Settings.canDrawOverlays(activity).not()) {
-            OverlayPermission(activity).onSuccess { }.onDeny { permissions ->
-                Log.d("MainActivity", "onDeny: $permissions")
-            }.request()
-        }
-    }
-}
 
 @Composable
 fun MinRemainAlarm(
