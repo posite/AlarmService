@@ -1,6 +1,10 @@
 package com.posite.my_alarm.ui.lock
 
+import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.icu.text.SimpleDateFormat
 import android.os.Build
@@ -33,12 +37,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.posite.my_alarm.R
+import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.main.getNextDate
 import com.posite.my_alarm.ui.slide.CircleUnlock
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
+import com.posite.my_alarm.util.AlarmReceiver
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class LockActivity : ComponentActivity() {
@@ -50,11 +64,19 @@ class LockActivity : ComponentActivity() {
         }
     }
 
+    @Inject
+    lateinit var alarmManager: AlarmManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         setShowWhenLocked(true)
         setTurnScreenOn(true)
+        val id = intent.getLongExtra(ALARM_ID, 0)
+        val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: getString(R.string.am)
+        val hour = intent.getIntExtra(ALARM_HOUR, 0)
+        val minute = intent.getIntExtra(ALARM_MINUTE, 0)
+
         enableEdgeToEdge()
         setContent {
             // 뒤로가기 버튼을 눌렀을 때 아무 동작도 하지 않도록 설정
@@ -128,12 +150,48 @@ class LockActivity : ComponentActivity() {
                     CircleUnlock {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
                         else (vibrator as Vibrator).cancel()
-
-                        finish()
+                        val currentDate = Calendar.getInstance()
+                        val calendar = getNextDate(
+                            AlarmStateEntity(id, hour, minute, meridiem, true),
+                            this@LockActivity
+                        )
+                        if (currentDate.timeInMillis >= calendar.timeInMillis) calendar.add(
+                            Calendar.DAY_OF_YEAR,
+                            1
+                        )
+                        addAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }
             }
         }
+    }
+
+    @SuppressLint("ScheduleExactAlarm")
+    private fun addAlarm(
+        calendar: android.icu.util.Calendar,
+        id: Int,
+        meridiem: String,
+        hour: Int,
+        minute: Int
+    ) {
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(
+                ALARM_ID,
+                id
+            ).putExtra(ALARM_MERIDIEM, meridiem)
+                .putExtra(ALARM_HOUR, hour)
+                .putExtra(ALARM_MINUTE, minute).let { intent ->
+                    PendingIntent.getBroadcast(
+                        this@LockActivity,
+                        id,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                }
+        )
+        finish()
     }
 
     companion object {

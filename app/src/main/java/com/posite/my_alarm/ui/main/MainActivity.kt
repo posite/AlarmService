@@ -161,7 +161,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestPermission(activity: ComponentActivity, alarmManager: AlarmManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms().not()) {
                 ExactAlarmPermission(activity).onSuccess { }.onDeny { permissions ->
                     Log.d("MainActivity", "onDeny: $permissions")

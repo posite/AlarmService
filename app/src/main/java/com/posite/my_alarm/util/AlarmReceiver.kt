@@ -7,13 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.os.Build
-import android.util.Log
 import com.posite.my_alarm.R
 import com.posite.my_alarm.ui.lock.LockActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -32,13 +28,13 @@ class AlarmReceiver : BroadcastReceiver() {
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
                 addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                putExtra(ALARM_ID, id)
+                putExtra(ALARM_MERIDIEM, meridiem)
+                putExtra(ALARM_HOUR, hour)
+                putExtra(ALARM_MINUTE, minute)
             }
         )
 
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.d("AlarmReceiver", "meridiem: $meridiem, hour: $hour, minute: $minute")
-            setAlarmForNextDay(context, id, meridiem, hour, minute)
-        }
     }
 
     private fun setAlarmForNextDay(
