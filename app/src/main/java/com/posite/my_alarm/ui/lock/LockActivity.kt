@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.icu.text.SimpleDateFormat
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.CombinedVibration
@@ -67,6 +68,9 @@ class LockActivity : ComponentActivity() {
     @Inject
     lateinit var alarmManager: AlarmManager
 
+    @Inject
+    lateinit var mediaPlayer: MediaPlayer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
@@ -78,10 +82,11 @@ class LockActivity : ComponentActivity() {
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
 
         enableEdgeToEdge()
+        mediaPlayer.prepare()
         setContent {
             // 뒤로가기 버튼을 눌렀을 때 아무 동작도 하지 않도록 설정
             BackHandler { }
-
+            mediaPlayer.start()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val timings = longArrayOf(100, 200, 100, 200, 100, 200)
                 val amplitudes = intArrayOf(0, 50, 0, 100, 0, 200)
@@ -159,6 +164,7 @@ class LockActivity : ComponentActivity() {
                             Calendar.DAY_OF_YEAR,
                             1
                         )
+                        mediaPlayer.stop()
                         addAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }
