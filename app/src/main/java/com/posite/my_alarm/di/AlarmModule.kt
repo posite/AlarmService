@@ -40,6 +40,7 @@ object AlarmModule {
                     .appendPath(context.resources.getResourceTypeName(R.raw.alarm))
                     .appendPath(context.resources.getResourceEntryName(R.raw.alarm)).build()
             )
+            isLooping = true
         }
     }
 }
