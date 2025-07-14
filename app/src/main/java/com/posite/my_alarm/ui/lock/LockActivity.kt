@@ -166,7 +166,7 @@ class LockActivity : ComponentActivity() {
                         )
                         mediaPlayer.pause()
                         mediaPlayer.seekTo(0)
-                        addAlarm(calendar, id.toInt(), meridiem, hour, minute)
+                        updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }
             }
@@ -174,13 +174,29 @@ class LockActivity : ComponentActivity() {
     }
 
     @SuppressLint("ScheduleExactAlarm")
-    private fun addAlarm(
+    private fun updateAlarm(
         calendar: android.icu.util.Calendar,
         id: Int,
         meridiem: String,
         hour: Int,
         minute: Int
     ) {
+        alarmManager.cancel(
+            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(
+                ALARM_ID,
+                id
+            ).putExtra(ALARM_MERIDIEM, meridiem)
+                .putExtra(ALARM_HOUR, hour)
+                .putExtra(ALARM_MINUTE, minute).let { intent ->
+                    PendingIntent.getBroadcast(
+                        this@LockActivity,
+                        id,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    )
+                }
+        )
+
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,

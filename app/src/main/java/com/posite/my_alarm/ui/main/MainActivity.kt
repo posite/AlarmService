@@ -17,6 +17,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -357,6 +358,7 @@ class MainActivity : ComponentActivity() {
         addAlarm(meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -378,6 +380,7 @@ class MainActivity : ComponentActivity() {
             requestPermissions(deniedPermissions.toTypedArray(), 1000)
         } else {
             Log.d("MainActivity", "onRequestPermissionsResult: $permissions")
+            alarmManager.cancelAll()
         }
     }
 

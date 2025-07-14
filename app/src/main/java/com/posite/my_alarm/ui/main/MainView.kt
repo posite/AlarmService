@@ -66,6 +66,7 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 
 @Composable
 fun MainView(
@@ -82,7 +83,7 @@ fun MainView(
     insertAlarm: () -> Unit,
 ) {
     val context = LocalContext.current
-    var minTime by remember { mutableStateOf<AlarmClockInfo?>(null) }
+    var minTime by remember { mutableStateOf<AlarmStateEntity?>(null) }
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
 
@@ -126,7 +127,8 @@ fun MainView(
             while (true) {
                 delay(1000)
                 minTime = if (states.alarmList.isEmpty().not()) {
-                    alarmManager.nextAlarmClock
+                    states.alarmList.filter { it.isActive }
+                        .minByOrNull { getNextDate(it, context).timeInMillis }
                 } else null
             }
         }
@@ -203,7 +205,7 @@ fun MainView(
 @Composable
 fun MinRemainAlarm(
     scrollValue: Int,
-    minTime: AlarmClockInfo?
+    minTime: AlarmStateEntity?
 ) {
     val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
@@ -218,7 +220,7 @@ fun MinRemainAlarm(
                 remainHour = time.first
                 remainMinute = time.second
             }*/
-            val time = checkTimeChange(minTime)
+            val time = checkTimeChange(minTime, context)
             remainHour = time.first
             remainMinute = time.second
         }
@@ -235,7 +237,7 @@ fun MinRemainAlarm(
             fontSize = 32.sp,
             color = Color.Black.copy(alpha)
         )
-        val date = getNextDate(minTime)
+        val date = getNextDate(minTime, context)
         val meridiem =
             if (date.get(Calendar.AM_PM) == Calendar.AM) stringResource(R.string.am) else stringResource(
                 R.string.pm
@@ -266,12 +268,22 @@ fun MinRemainAlarm(
     }
 }
 
-private fun checkTimeChange(minTime: AlarmClockInfo): Pair<Int, Int> {
-    var remainTime = minTime.triggerTime - System.currentTimeMillis()
-    val hour = remainTime / (1000 * 60 * 60)
-    val minute = (remainTime / (1000 * 60)) % 60
+private fun checkTimeChange(minTime: AlarmStateEntity, context: Context): Pair<Int, Int> {
+    val localDateTime = LocalDateTime.now()
+    var hour = minTime.hour - localDateTime.hour
+    if (minTime.meridiem == context.getString(R.string.pm)) {
+        hour += 12
+    }
+    var minute = minTime.minute - localDateTime.minute
+    if (minute < 0) {
+        hour -= 1
+        minute += 60
+    }
+    if (hour < 0) {
+        hour += 24
+    }
 
-    return Pair(hour.toInt(), minute.toInt())
+    return Pair(hour, minute)
 }
 
 @Composable
@@ -468,7 +480,7 @@ fun AlarmListTitle(
     }
 }
 
-fun getNextDate(alarm: AlarmClockInfo): Calendar {
+fun getNextDate(alarm: AlarmClockInfo, context: Context): Calendar {
     val calendar: Calendar = Calendar.getInstance().apply {
         timeInMillis = alarm.triggerTime
     }
