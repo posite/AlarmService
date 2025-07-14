@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 MainView(
+                    alarmManager,
                     isDeleteMode,
                     isAlarmClick,
                     meridiemState,

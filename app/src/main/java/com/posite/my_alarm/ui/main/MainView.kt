@@ -1,5 +1,7 @@
 package com.posite.my_alarm.ui.main
 
+import android.app.AlarmManager
+import android.app.AlarmManager.AlarmClockInfo
 import android.content.Context
 import android.icu.util.Calendar
 import android.util.Log
@@ -64,10 +66,10 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
-import java.time.LocalDateTime
 
 @Composable
 fun MainView(
+    alarmManager: AlarmManager,
     isDeleteMode: MutableState<Boolean>,
     isAlarmClick: MutableState<AlarmStateEntity?>,
     meridiemState: PickerState<String>,
@@ -80,7 +82,7 @@ fun MainView(
     insertAlarm: () -> Unit,
 ) {
     val context = LocalContext.current
-    var minTime by remember { mutableStateOf<AlarmStateEntity?>(null) }
+    var minTime by remember { mutableStateOf<AlarmClockInfo?>(null) }
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
 
@@ -124,8 +126,7 @@ fun MainView(
             while (true) {
                 delay(1000)
                 minTime = if (states.alarmList.isEmpty().not()) {
-                    states.alarmList.filter { it.isActive }
-                        .minByOrNull { getNextDate(it, context).timeInMillis }
+                    alarmManager.nextAlarmClock
                 } else null
             }
         }
@@ -134,7 +135,8 @@ fun MainView(
         MinRemainAlarm(scrollState.value, minTime)
 
         Spacer(modifier = Modifier.height(24.dp))
-        AlarmList(states.alarmList,
+        AlarmList(
+            states.alarmList,
             isDeleteMode,
             set,
             isShowTimePicker,
@@ -201,7 +203,7 @@ fun MainView(
 @Composable
 fun MinRemainAlarm(
     scrollValue: Int,
-    minTime: AlarmStateEntity?
+    minTime: AlarmClockInfo?
 ) {
     val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
     var remainHour by remember { mutableStateOf(0) }
@@ -216,7 +218,7 @@ fun MinRemainAlarm(
                 remainHour = time.first
                 remainMinute = time.second
             }*/
-            val time = checkTimeChange(minTime, context)
+            val time = checkTimeChange(minTime)
             remainHour = time.first
             remainMinute = time.second
         }
@@ -233,7 +235,7 @@ fun MinRemainAlarm(
             fontSize = 32.sp,
             color = Color.Black.copy(alpha)
         )
-        val date = getNextDate(minTime, context)
+        val date = getNextDate(minTime)
         val meridiem =
             if (date.get(Calendar.AM_PM) == Calendar.AM) stringResource(R.string.am) else stringResource(
                 R.string.pm
@@ -264,22 +266,12 @@ fun MinRemainAlarm(
     }
 }
 
-private fun checkTimeChange(minTime: AlarmStateEntity, context: Context): Pair<Int, Int> {
-    val localDateTime = LocalDateTime.now()
-    var hour = minTime.hour - localDateTime.hour
-    if (minTime.meridiem == context.getString(R.string.pm)) {
-        hour += 12
-    }
-    var minute = minTime.minute - localDateTime.minute
-    if (minute < 0) {
-        hour -= 1
-        minute += 60
-    }
-    if (hour < 0) {
-        hour += 24
-    }
+private fun checkTimeChange(minTime: AlarmClockInfo): Pair<Int, Int> {
+    var remainTime = minTime.triggerTime - System.currentTimeMillis()
+    val hour = remainTime / (1000 * 60 * 60)
+    val minute = (remainTime / (1000 * 60)) % 60
 
-    return Pair(hour, minute)
+    return Pair(hour.toInt(), minute.toInt())
 }
 
 @Composable
@@ -474,6 +466,17 @@ fun AlarmListTitle(
             )
         }
     }
+}
+
+fun getNextDate(alarm: AlarmClockInfo): Calendar {
+    val calendar: Calendar = Calendar.getInstance().apply {
+        timeInMillis = alarm.triggerTime
+    }
+    //Log.d("MainActivity", "calendar: ${calendar.get(Calendar.HOUR_OF_DAY)}")
+    if (System.currentTimeMillis() >= calendar.timeInMillis) {
+        calendar.add(Calendar.DAY_OF_YEAR, 1)
+    }
+    return calendar
 }
 
 fun getNextDate(alarm: AlarmStateEntity, context: Context): Calendar {
