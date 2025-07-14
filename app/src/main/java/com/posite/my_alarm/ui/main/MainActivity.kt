@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                                             context,
                                             item.id.toInt(),
                                             intent,
-                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                                         )
                                     }
                             )
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                             context,
                                             item.id.toInt(),
                                             intent,
-                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                                         )
                                     }, item
                             )
@@ -129,7 +129,7 @@ class MainActivity : ComponentActivity() {
                                 context,
                                 alarm.id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                             )
                         }, alarm, DELETE_ALARM)
                         viewModel.deleteAlarmState(alarm)
@@ -213,7 +213,7 @@ class MainActivity : ComponentActivity() {
                                 this@MainActivity,
                                 it.alarm.id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                             )
                             addAlarm(
                                 it.alarm.meridiem,
@@ -245,7 +245,7 @@ class MainActivity : ComponentActivity() {
                                 this@MainActivity,
                                 viewModel.currentState.selectedAlarm!!.id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                             )
                             updateAlarm(
                                 viewModel.currentState.selectedAlarm!!.meridiem,

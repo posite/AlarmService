@@ -36,9 +36,10 @@ object AlarmModule {
             setDataSource(
                 context,
                 Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
-                    .authority(context.resources.getResourcePackageName(R.raw.alarm))
-                    .appendPath(context.resources.getResourceTypeName(R.raw.alarm))
-                    .appendPath(context.resources.getResourceEntryName(R.raw.alarm)).build()
+                    .authority(context.resources.getResourcePackageName(R.raw.f1_radio_notification_made_with_voicemod))
+                    .appendPath(context.resources.getResourceTypeName(R.raw.f1_radio_notification_made_with_voicemod))
+                    .appendPath(context.resources.getResourceEntryName(R.raw.f1_radio_notification_made_with_voicemod))
+                    .build()
             )
             isLooping = true
         }
