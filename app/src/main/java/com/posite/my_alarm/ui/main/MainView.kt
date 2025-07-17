@@ -271,7 +271,7 @@ fun MinRemainAlarm(
 private fun checkTimeChange(minTime: AlarmStateEntity, context: Context): Pair<Int, Int> {
     val localDateTime = LocalDateTime.now()
     var hour = minTime.hour - localDateTime.hour
-    if (minTime.meridiem == context.getString(R.string.pm)) {
+    if (minTime.meridiem == context.getString(R.string.pm) && minTime.hour != 12) {
         hour += 12
     }
     var minute = minTime.minute - localDateTime.minute

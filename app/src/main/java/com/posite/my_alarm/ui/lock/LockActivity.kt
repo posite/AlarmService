@@ -164,8 +164,7 @@ class LockActivity : ComponentActivity() {
                             Calendar.DAY_OF_YEAR,
                             1
                         )
-                        mediaPlayer.pause()
-                        mediaPlayer.seekTo(0)
+                        mediaPlayer.stop()
                         updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }

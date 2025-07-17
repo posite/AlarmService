@@ -6,6 +6,8 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import com.posite.my_alarm.R
 import dagger.Module
 import dagger.Provides
@@ -41,7 +43,13 @@ object AlarmModule {
                     .appendPath(context.resources.getResourceEntryName(R.raw.f1_radio_notification_made_with_voicemod))
                     .build()
             )
-            isLooping = true
+            isLooping = false
+            setOnCompletionListener {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    this.seekTo(0)
+                    this.start()
+                }, 1000)
+            }
         }
     }
 }
