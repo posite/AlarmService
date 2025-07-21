@@ -13,10 +13,10 @@ android {
 
     defaultConfig {
         applicationId = "com.posite.my_alarm"
-        minSdk = 28
+        minSdk = 34
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 5
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

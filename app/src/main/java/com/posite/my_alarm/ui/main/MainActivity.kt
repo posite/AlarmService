@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -17,7 +16,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -163,27 +161,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestPermission(activity: ComponentActivity, alarmManager: AlarmManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (alarmManager.canScheduleExactAlarms().not()) {
-                ExactAlarmPermission(activity).onSuccess { }.onDeny { permissions ->
-                    Log.d("MainActivity", "onDeny: $permissions")
-                }.request()
+        if (alarmManager.canScheduleExactAlarms().not()) {
+            ExactAlarmPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
 
-            }
-            if (ContextCompat.checkSelfPermission(
-                    activity,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_DENIED
-            ) {
-                NotificationPermission(activity).onSuccess { }.onDeny { permissions ->
-                    Log.d("MainActivity", "onDeny: $permissions")
-                }.request()
-            }
-            if (Settings.canDrawOverlays(activity).not()) {
-                OverlayPermission(activity).onSuccess { }.onDeny { permissions ->
-                    Log.d("MainActivity", "onDeny: $permissions")
-                }.request()
-            }
+        }
+        if (ContextCompat.checkSelfPermission(
+                activity,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_DENIED
+        ) {
+            NotificationPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
+        }
+        if (Settings.canDrawOverlays(activity).not()) {
+            OverlayPermission(activity).onSuccess { }.onDeny { permissions ->
+                Log.d("MainActivity", "onDeny: $permissions")
+            }.request()
         }
     }
 
@@ -358,7 +354,6 @@ class MainActivity : ComponentActivity() {
         addAlarm(meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,

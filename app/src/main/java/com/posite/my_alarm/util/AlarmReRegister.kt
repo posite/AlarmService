@@ -1,9 +1,7 @@
 package com.posite.my_alarm.util
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -15,7 +13,6 @@ class AlarmReRegister(context: Context, workerParams: WorkerParameters) :
     CoroutineWorker(context, workerParams) {
     private val repository = applicationContext.getMyApplication().timeRepository
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override suspend fun doWork(): Result {
         try {
             AlarmScheduler.clearAlarm(applicationContext)

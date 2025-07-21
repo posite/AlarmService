@@ -5,13 +5,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
-import android.os.Build
-import androidx.annotation.RequiresApi
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 
 object AlarmScheduler {
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun clearAlarm(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         alarmManager.cancelAll()
@@ -46,14 +43,12 @@ object AlarmScheduler {
         if (current > calendar.timeInMillis) {
             calendar.add(Calendar.DAY_OF_YEAR, 1)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (alarmManager.canScheduleExactAlarms()) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
-                )
-            }
+        if (alarmManager.canScheduleExactAlarms()) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                pendingIntent
+            )
         }
     }
 }
