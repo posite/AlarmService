@@ -17,10 +17,7 @@ class AlarmReRegister(context: Context, workerParams: WorkerParameters) :
         try {
             AlarmScheduler.clearAlarm(applicationContext)
             val alarms = repository.getAlarmStates().first()
-            alarms.forEach {
-                AlarmScheduler.setExactAlarm(applicationContext, it)
-                Log.d("AlarmReRegister", "Alarm set for ID: ${it.id}")
-            }
+            alarms.forEach { if (it.isActive) AlarmScheduler.setExactAlarm(applicationContext, it) }
         } catch (e: Exception) {
             Log.e("AlarmReRegister", "Error re-registering alarms: ${e.message}")
             return Result.failure()
