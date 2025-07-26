@@ -64,6 +64,15 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
                 }
             }
 
+            is MainContract.MainEvent.ChangeAlarmActivation -> {
+                viewModelScope.launch {
+                    val coroutineScope = CoroutineScope(Dispatchers.IO)
+                    coroutineScope.async {
+                        repository.updateAlarm(alarm = event.alarm)
+                        setState { copy(selectedAlarm = event.alarm) }
+                    }.await()
+                }
+            }
         }
     }
 
@@ -81,4 +90,6 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
     fun deleteAlarmState(alarm: AlarmStateEntity) =
         setEvent(MainContract.MainEvent.DeleteAlarm(alarm))
 
+    fun changeAlarmActivation(alarm: AlarmStateEntity) =
+        setEvent(MainContract.MainEvent.ChangeAlarmActivation(alarm))
 }

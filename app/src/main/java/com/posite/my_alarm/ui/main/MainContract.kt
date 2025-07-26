@@ -12,6 +12,7 @@ class MainContract {
         data class InsertAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class UpdateAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class DeleteAlarm(val alarm: AlarmStateEntity) : MainEvent()
+        data class ChangeAlarmActivation(val alarm: AlarmStateEntity) : MainEvent()
     }
 
     data class MainUiState(

@@ -117,7 +117,7 @@ class MainActivity : ComponentActivity() {
                                     }, item
                             )
                         }
-                        viewModel.updateAlarmState(item.copy(isActive = item.isActive.not()))
+                        viewModel.changeAlarmActivation(item.copy(isActive = isActive))
                         Log.d(
                             "MainActivity",
                             viewModel.currentState.alarmList.toString()
