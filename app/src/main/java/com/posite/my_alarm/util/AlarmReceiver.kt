@@ -17,6 +17,12 @@ class AlarmReceiver : BroadcastReceiver() {
     lateinit var alarmManager: AlarmManager
 
     override fun onReceive(context: Context, intent: Intent) {
+        val code = intent.getLongExtra(VERSION_CODE, 0)
+        if (code != context.packageManager.getPackageInfo(
+                context.packageName,
+                0
+            ).longVersionCode
+        ) return
         val id = intent.getLongExtra(ALARM_ID, 0)
         val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: context.getString(R.string.am)
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
@@ -77,6 +83,7 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        const val VERSION_CODE = "CODE"
         const val ALARM_ID = "ID"
         const val ALARM_MERIDIEM = "MERIDIEM"
         const val ALARM_HOUR = "HOUR"

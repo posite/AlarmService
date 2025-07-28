@@ -7,6 +7,11 @@ import android.content.Intent
 import android.icu.util.Calendar
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
+import com.posite.my_alarm.ui.main.MainActivity.Companion.VERSION_CODE
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
+import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
 
 object AlarmScheduler {
     fun clearAlarm(context: Context) {
@@ -17,9 +22,14 @@ object AlarmScheduler {
     fun setExactAlarm(context: Context, alarm: AlarmStateEntity) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("alarm_id", alarm.id)
-        }
+        val intent = Intent(context, AlarmReceiver::class.java).putExtra(ALARM_ID, alarm.id)
+            .putExtra(ALARM_MERIDIEM, alarm.meridiem)
+            .putExtra(ALARM_HOUR, alarm.hour)
+            .putExtra(ALARM_MINUTE, alarm.minute)
+            .putExtra(
+                VERSION_CODE,
+                context.packageManager.getPackageInfo(context.packageName, 0).longVersionCode
+            )
 
         val pendingIntent = PendingIntent.getBroadcast(
             context, alarm.id.toInt(), intent,

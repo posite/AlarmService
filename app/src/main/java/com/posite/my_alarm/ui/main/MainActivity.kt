@@ -86,35 +86,25 @@ class MainActivity : ComponentActivity() {
                                 item.meridiem,
                                 item.hour,
                                 item.minute.toString(),
-                                Intent(context, AlarmReceiver::class.java).putExtra(
-                                    ALARM_ID,
-                                    item.id
-                                ).putExtra(ALARM_MERIDIEM, item.meridiem)
-                                    .putExtra(ALARM_HOUR, item.hour)
-                                    .putExtra(ALARM_MINUTE, item.minute).let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            context,
-                                            item.id.toInt(),
-                                            intent,
-                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                                        )
-                                    }
+                                createAlarmIntent(item).let { intent ->
+                                    PendingIntent.getBroadcast(
+                                        context,
+                                        item.id.toInt(),
+                                        intent,
+                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                    )
+                                }
                             )
                         } else {
                             removeAlarm(
-                                Intent(context, AlarmReceiver::class.java).putExtra(
-                                    ALARM_ID,
-                                    item.id
-                                ).putExtra(ALARM_MERIDIEM, item.meridiem)
-                                    .putExtra(ALARM_HOUR, item.hour)
-                                    .putExtra(ALARM_MINUTE, item.minute).let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            context,
-                                            item.id.toInt(),
-                                            intent,
-                                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                                        )
-                                    }, item
+                                createAlarmIntent(item).let { intent ->
+                                    PendingIntent.getBroadcast(
+                                        context,
+                                        item.id.toInt(),
+                                        intent,
+                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                    )
+                                }, item
                             )
                         }
                         viewModel.changeAlarmActivation(item.copy(isActive = isActive))
@@ -124,7 +114,7 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     deleteAlarm = { alarm ->
-                        removeAlarm(Intent(context, AlarmReceiver::class.java).let { intent ->
+                        removeAlarm(createAlarmIntent(alarm).let { intent ->
                             PendingIntent.getBroadcast(
                                 context,
                                 alarm.id.toInt(),
@@ -191,22 +181,7 @@ class MainActivity : ComponentActivity() {
                     when (it) {
                         is MainContract.MainEffect.ItemInserted -> {
                             delay(1000)
-                            val intent =
-                                Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
-                                    ALARM_ID,
-                                    it.alarm.id
-                                ).putExtra(
-                                    ALARM_MERIDIEM,
-                                    it.alarm.meridiem
-                                )
-                                    .putExtra(
-                                        ALARM_HOUR,
-                                        it.alarm.hour
-                                    )
-                                    .putExtra(
-                                        ALARM_MINUTE,
-                                        it.alarm.minute
-                                    )
+                            val intent = createAlarmIntent(it.alarm)
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
                                 it.alarm.id.toInt(),
@@ -223,22 +198,7 @@ class MainActivity : ComponentActivity() {
 
                         is MainContract.MainEffect.ItemUpdated -> {
                             delay(1000)
-                            val intent =
-                                Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(
-                                    ALARM_ID,
-                                    viewModel.currentState.selectedAlarm!!.id
-                                ).putExtra(
-                                    ALARM_MERIDIEM,
-                                    viewModel.currentState.selectedAlarm!!.meridiem
-                                )
-                                    .putExtra(
-                                        ALARM_HOUR,
-                                        viewModel.currentState.selectedAlarm!!.hour
-                                    )
-                                    .putExtra(
-                                        ALARM_MINUTE,
-                                        viewModel.currentState.selectedAlarm!!.minute
-                                    )
+                            val intent = createAlarmIntent(viewModel.currentState.selectedAlarm!!)
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
                                 viewModel.currentState.selectedAlarm!!.id.toInt(),
@@ -260,6 +220,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun createAlarmIntent(it: AlarmStateEntity): Intent {
+        val intent =
+            Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
+                .putExtra(ALARM_MERIDIEM, it.meridiem)
+                .putExtra(ALARM_HOUR, it.hour)
+                .putExtra(ALARM_MINUTE, it.minute)
+                .putExtra(
+                    VERSION_CODE,
+                    packageManager.getPackageInfo(packageName, 0).longVersionCode
+                )
+        return intent
+    }
+
     @SuppressLint("ScheduleExactAlarm")
     private fun addAlarm(
         meridiemState: String,
@@ -274,8 +247,7 @@ class MainActivity : ComponentActivity() {
                 minute = minuteState.toInt(),
                 meridiem = meridiemState,
                 isActive = true,
-            ),
-            this
+            ), this
         ).timeInMillis
 
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")
@@ -380,6 +352,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val VERSION_CODE = "CODE"
         const val DEFAULT_MERIDIEM = "오전"
         const val DEFAULT_HOUR = 6
         const val DEFAULT_MINUTE = "00"
