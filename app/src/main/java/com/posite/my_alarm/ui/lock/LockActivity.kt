@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.main.MainActivity.Companion.VERSION_CODE
 import com.posite.my_alarm.ui.main.getNextDate
 import com.posite.my_alarm.ui.slide.CircleUnlock
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
@@ -168,12 +169,14 @@ class LockActivity : ComponentActivity() {
         minute: Int
     ) {
         alarmManager.cancel(
-            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(
-                ALARM_ID,
-                id
-            ).putExtra(ALARM_MERIDIEM, meridiem)
+            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, id)
+                .putExtra(ALARM_MERIDIEM, meridiem)
                 .putExtra(ALARM_HOUR, hour)
-                .putExtra(ALARM_MINUTE, minute).let { intent ->
+                .putExtra(ALARM_MINUTE, minute)
+                .putExtra(ALARM_MINUTE, minute).putExtra(
+                    VERSION_CODE,
+                    packageManager.getPackageInfo(packageName, 0).longVersionCode
+                ).let { intent ->
                     PendingIntent.getBroadcast(
                         this@LockActivity,
                         id,
@@ -186,12 +189,12 @@ class LockActivity : ComponentActivity() {
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
-            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(
-                ALARM_ID,
-                id
-            ).putExtra(ALARM_MERIDIEM, meridiem)
-                .putExtra(ALARM_HOUR, hour)
-                .putExtra(ALARM_MINUTE, minute).let { intent ->
+            Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, id)
+                .putExtra(ALARM_MERIDIEM, meridiem).putExtra(ALARM_HOUR, hour)
+                .putExtra(ALARM_MINUTE, minute).putExtra(
+                    VERSION_CODE,
+                    packageManager.getPackageInfo(packageName, 0).longVersionCode
+                ).let { intent ->
                     PendingIntent.getBroadcast(
                         this@LockActivity,
                         id,
