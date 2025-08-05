@@ -152,7 +152,7 @@ class LockActivity : ComponentActivity() {
                             Calendar.DAY_OF_YEAR,
                             1
                         )
-                        mediaPlayer.stop()
+                        mediaPlayer.pause()
                         updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }
