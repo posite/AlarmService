@@ -25,6 +25,6 @@ class MainContract {
         data class ShowAlarmDetails(val alarm: AlarmStateEntity) : MainEffect()
         data object NavigateToAlarmList : MainEffect()
         data class ItemInserted(val isSuccess: Boolean, val alarm: AlarmStateEntity) : MainEffect()
-        data class ItemUpdated(val isSuccess: Boolean) : MainEffect()
+        data class ItemUpdated(val isActivated: Boolean) : MainEffect()
     }
 }

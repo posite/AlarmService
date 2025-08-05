@@ -54,7 +54,7 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
                         repository.updateAlarm(alarm = event.alarm)
                         setState { copy(selectedAlarm = event.alarm) }
                     }.await()
-                    setEffect { MainContract.MainEffect.ItemUpdated(true) }
+                    setEffect { MainContract.MainEffect.ItemUpdated(event.alarm.isActive) }
                 }
             }
 

@@ -205,12 +205,14 @@ class MainActivity : ComponentActivity() {
                                 intent,
                                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
                             )
-                            updateAlarm(
-                                viewModel.currentState.selectedAlarm!!.meridiem,
-                                viewModel.currentState.selectedAlarm!!.hour,
-                                viewModel.currentState.selectedAlarm!!.minute.toString(),
-                                pendingIntent
-                            )
+                            if (it.isActivated) {
+                                updateAlarm(
+                                    viewModel.currentState.selectedAlarm!!.meridiem,
+                                    viewModel.currentState.selectedAlarm!!.hour,
+                                    viewModel.currentState.selectedAlarm!!.minute.toString(),
+                                    pendingIntent
+                                )
+                            }
                         }
 
                         else -> {}
