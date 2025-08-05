@@ -114,7 +114,17 @@ fun MainView(
             }
         }
     }
-
+    LaunchedEffect(states) {
+        //Log.d("MainActivity", "states: ${states.alarmList}")
+        while (true) {
+            delay(999)
+            minTime = if (states.alarmList.isEmpty().not()) {
+                states.alarmList.filter { it.isActive }
+                    .minByOrNull { getNextDate(it, context).timeInMillis }
+            } else null
+            //Log.d("states", "minTime: $minTime")
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -122,17 +132,6 @@ fun MainView(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LaunchedEffect(states) {
-            Log.d("MainActivity", "states: ${states.alarmList}")
-            while (true) {
-                delay(1000)
-                minTime = if (states.alarmList.isEmpty().not()) {
-                    states.alarmList.filter { it.isActive }
-                        .minByOrNull { getNextDate(it, context).timeInMillis }
-                } else null
-            }
-        }
-
         Spacer(modifier = Modifier.height(60.dp))
         MinRemainAlarm(scrollState.value, minTime)
 
@@ -214,15 +213,12 @@ fun MinRemainAlarm(
 
     if (minTime != null) {
         LaunchedEffect(minTime) {
-            /*while (true) {
+            while (true) {
                 delay(1000)
-                val time = checkTimeChange(minTime)
+                val time = checkTimeChange(minTime, context)
                 remainHour = time.first
                 remainMinute = time.second
-            }*/
-            val time = checkTimeChange(minTime, context)
-            remainHour = time.first
-            remainMinute = time.second
+            }
         }
 
         Text(
