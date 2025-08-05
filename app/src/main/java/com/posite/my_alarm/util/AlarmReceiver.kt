@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
+import android.util.Log
 import com.posite.my_alarm.R
 import com.posite.my_alarm.ui.lock.LockActivity
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,11 +19,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val code = intent.getLongExtra(VERSION_CODE, 0)
-        if (code != context.packageManager.getPackageInfo(
-                context.packageName,
-                0
-            ).longVersionCode
-        ) return
+        Log.d("versionCode", "onReceive: $code")
+        if (code < MIN_VERSION_CODE) return
         val id = intent.getLongExtra(ALARM_ID, 0)
         val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: context.getString(R.string.am)
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
@@ -88,5 +86,6 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ALARM_MERIDIEM = "MERIDIEM"
         const val ALARM_HOUR = "HOUR"
         const val ALARM_MINUTE = "MINUTE"
+        const val MIN_VERSION_CODE = 8L
     }
 }
