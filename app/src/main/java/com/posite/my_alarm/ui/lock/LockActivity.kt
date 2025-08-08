@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.icu.text.SimpleDateFormat
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CombinedVibration
 import android.os.VibrationEffect
@@ -48,6 +47,7 @@ import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
+import com.posite.my_alarm.util.AlarmSoundPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.Calendar
 import java.util.Date
@@ -64,7 +64,7 @@ class LockActivity : ComponentActivity() {
     lateinit var alarmManager: AlarmManager
 
     @Inject
-    lateinit var mediaPlayer: MediaPlayer
+    lateinit var alarmSoundPlayer: AlarmSoundPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,11 +77,10 @@ class LockActivity : ComponentActivity() {
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
 
         enableEdgeToEdge()
-        mediaPlayer.prepare()
         setContent {
             // 뒤로가기 버튼을 눌렀을 때 아무 동작도 하지 않도록 설정
             BackHandler { }
-            mediaPlayer.start()
+            alarmSoundPlayer.play()
             val timings = longArrayOf(100, 200, 100, 200, 100, 200)
             val amplitudes = intArrayOf(0, 50, 0, 100, 0, 200)
             val vibrationEffect = VibrationEffect.createWaveform(timings, amplitudes, 0)
@@ -152,7 +151,7 @@ class LockActivity : ComponentActivity() {
                             Calendar.DAY_OF_YEAR,
                             1
                         )
-                        mediaPlayer.pause()
+                        alarmSoundPlayer.stop()
                         updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                     }
                 }

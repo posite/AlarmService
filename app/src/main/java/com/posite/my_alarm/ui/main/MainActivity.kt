@@ -222,18 +222,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createAlarmIntent(it: AlarmStateEntity): Intent {
-        val intent =
-            Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
-                .putExtra(ALARM_MERIDIEM, it.meridiem)
-                .putExtra(ALARM_HOUR, it.hour)
-                .putExtra(ALARM_MINUTE, it.minute)
-                .putExtra(
-                    VERSION_CODE,
-                    packageManager.getPackageInfo(packageName, 0).longVersionCode
-                )
-        return intent
-    }
+    private fun createAlarmIntent(it: AlarmStateEntity): Intent =
+        Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
+            .putExtra(ALARM_MERIDIEM, it.meridiem)
+            .putExtra(ALARM_HOUR, it.hour)
+            .putExtra(ALARM_MINUTE, it.minute)
+            .putExtra(
+                VERSION_CODE,
+                packageManager.getPackageInfo(packageName, 0).longVersionCode
+            )
 
     @SuppressLint("ScheduleExactAlarm")
     private fun addAlarm(
