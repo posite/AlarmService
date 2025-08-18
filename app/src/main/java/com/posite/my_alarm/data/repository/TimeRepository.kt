@@ -13,8 +13,12 @@ class TimeRepository @Inject constructor(private val timeDao: AlarmStateDao) {
     }
 
     fun getAlarmStateById(id: Long) = flow {
-        timeDao.getAlarmStateById(id).collect {
-            emit(it)
+        timeDao.getAlarmStateById(id).collect { alarm ->
+            if (alarm != null) {
+                emit(alarm)
+            } else {
+                emit(null)
+            }
         }
     }
 

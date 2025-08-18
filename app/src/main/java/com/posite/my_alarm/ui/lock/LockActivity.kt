@@ -12,10 +12,12 @@ import android.os.CombinedVibration
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +38,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
@@ -49,6 +55,8 @@ import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
 import com.posite.my_alarm.util.AlarmSoundPlayer
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -56,9 +64,11 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class LockActivity : ComponentActivity() {
+    private val viewModel by viewModels<LockViewModel>()
     private val vibrator by lazy {
         getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
     }
+    private lateinit var isAlarmValid: MutableState<Boolean>
 
     @Inject
     lateinit var alarmManager: AlarmManager
@@ -75,85 +85,149 @@ class LockActivity : ComponentActivity() {
         val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: getString(R.string.am)
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
-
+        onEffect()
         enableEdgeToEdge()
+        Log.d("LockActivity", "onCreate: id=$id, hour=$hour, minute=$minute, meridiem=$meridiem")
         setContent {
-            // 뒤로가기 버튼을 눌렀을 때 아무 동작도 하지 않도록 설정
             BackHandler { }
-            alarmSoundPlayer.play()
-            val timings = longArrayOf(100, 200, 100, 200, 100, 200)
-            val amplitudes = intArrayOf(0, 50, 0, 100, 0, 200)
-            val vibrationEffect = VibrationEffect.createWaveform(timings, amplitudes, 0)
-            val combinedVibration = CombinedVibration.createParallel(vibrationEffect)
-            vibrator.vibrate(combinedVibration)
-            Log.i("vibrator", "AlarmReceiver onReceive() called 10000 : $vibrator")
-            MyAlarmTheme {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(color = Color.Transparent),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(color = Color.Transparent),
-                        //.background(color = Color.White)
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        var currentTime by remember { mutableStateOf("df") }
-                        var currentDate by remember { mutableStateOf("df") }
+            isAlarmValid = remember { mutableStateOf(false) }
+            viewModel.getAlarmStateById(id)
+            if (isAlarmValid.value) {
+                RingAlarm(
+                    id = id,
+                    hour = hour,
+                    minute = minute,
+                    meridiem = meridiem
+                )
+            }
+        }
+    }
 
-                        LaunchedEffect(Unit) {
-                            while (true) {
-                                currentDate =
-                                    SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(
-                                        Date()
-                                    )
-                                currentTime =
-                                    SimpleDateFormat(
-                                        TIME_FORMAT,
-                                        Locale.getDefault()
-                                    ).format(Date())
-                                kotlinx.coroutines.delay(1000) // 1초마다 업데이트
+    private fun onEffect() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.effect.collect {
+                    when (it) {
+                        is LockContract.LockEffect.ISAlarmExist -> {
+                            val alarmState = it.alarm
+                            if (checkValidAlarm(
+                                    alarmState.id,
+                                    alarmState.hour,
+                                    alarmState.minute,
+                                    alarmState.meridiem,
+                                    alarmState
+                                )
+                            ) {
+                                isAlarmValid.value = true
+                            } else {
+                                Toast.makeText(this@LockActivity, "잘못된 알람입니다", Toast.LENGTH_SHORT)
+                                    .show()
+                                finish()
                             }
                         }
 
-                        // 현재 날짜 표시
-                        Text(
-                            text = currentDate,
-                            fontSize = 24.sp,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-
-                        // 현재 시간 표시 (크고 중앙에 배치)
-                        Text(
-                            text = currentTime, // 현재 시간 텍스트
-                            fontSize = 32.sp,
-                            modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
-                        )
+                        else -> {
+                            Toast.makeText(this@LockActivity, "알람이 존재하지 않습니다.", Toast.LENGTH_SHORT)
+                                .show()
+                            finish()
+                        }
                     }
-                    /*SwipeUnlockButton {
+                }
+            }
+        }
+    }
+
+    private fun checkValidAlarm(
+        id: Long,
+        hour: Int,
+        minute: Int,
+        meridiem: String,
+        alarm: AlarmStateEntity
+    ) = id == alarm.id &&
+            hour == alarm.hour &&
+            minute == alarm.minute &&
+            meridiem == alarm.meridiem &&
+            alarm.isActive
+
+
+    @Composable
+    private fun RingAlarm(
+        id: Long,
+        hour: Int,
+        minute: Int,
+        meridiem: String
+    ) {
+        alarmSoundPlayer.play()
+        val vibrationEffect = VibrationEffect.createWaveform(timings, amplitudes, 0)
+        val combinedVibration = CombinedVibration.createParallel(vibrationEffect)
+        vibrator.vibrate(combinedVibration)
+        Log.i("vibrator", "AlarmReceiver onReceive() called 10000 : $vibrator")
+        MyAlarmTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.Transparent),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color = Color.Transparent),
+                    //.background(color = Color.White)
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    var currentTime by remember { mutableStateOf("df") }
+                    var currentDate by remember { mutableStateOf("df") }
+
+                    LaunchedEffect(Unit) {
+                        while (true) {
+                            currentDate =
+                                SimpleDateFormat(DATE_FORMAT, Locale.getDefault()).format(
+                                    Date()
+                                )
+                            currentTime =
+                                SimpleDateFormat(
+                                    TIME_FORMAT,
+                                    Locale.getDefault()
+                                ).format(Date())
+                            delay(1000) // 1초마다 업데이트
+                        }
+                    }
+
+                    // 현재 날짜 표시
+                    Text(
+                        text = currentDate,
+                        fontSize = 24.sp,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    // 현재 시간 표시 (크고 중앙에 배치)
+                    Text(
+                        text = currentTime, // 현재 시간 텍스트
+                        fontSize = 32.sp,
+                        modifier = Modifier.padding(vertical = 16.dp) // 위아래 패딩 추가
+                    )
+                }
+                /*SwipeUnlockButton {
                         Log.d("LockActivity", "SwipeUnlockButton clicked")
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) (vibrator as VibratorManager).cancel()
                         else (vibrator as Vibrator).cancel()
 
                         finish()
                     }*/
-                    CircleUnlock {
-                        vibrator.cancel()
-                        val currentDate = Calendar.getInstance()
-                        val calendar = getNextDate(
-                            AlarmStateEntity(id, hour, minute, meridiem, true),
-                            this@LockActivity
-                        )
-                        if (currentDate.timeInMillis >= calendar.timeInMillis) calendar.add(
-                            Calendar.DAY_OF_YEAR,
-                            1
-                        )
-                        alarmSoundPlayer.stop()
-                        updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
-                    }
+                CircleUnlock {
+                    vibrator.cancel()
+                    val currentDate = Calendar.getInstance()
+                    val calendar = getNextDate(
+                        AlarmStateEntity(id, hour, minute, meridiem, true),
+                        this@LockActivity
+                    )
+                    if (currentDate.timeInMillis >= calendar.timeInMillis) calendar.add(
+                        Calendar.DAY_OF_YEAR,
+                        1
+                    )
+                    alarmSoundPlayer.stop()
+                    updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                 }
             }
         }
@@ -208,6 +282,8 @@ class LockActivity : ComponentActivity() {
     companion object {
         private const val DATE_FORMAT = "yyyy년 MM월 dd일"
         private const val TIME_FORMAT = "aa hh:mm"
+        private val timings = longArrayOf(100, 200, 100, 200, 100, 200)
+        private val amplitudes = intArrayOf(0, 50, 0, 100, 0, 200)
     }
 }
 
@@ -240,7 +316,7 @@ fun GreetingPreview() {
                         )
                     currentTime =
                         SimpleDateFormat("aa hh:mm", Locale.getDefault()).format(Date())
-                    kotlinx.coroutines.delay(1000) // 1초마다 업데이트
+                    delay(1000) // 1초마다 업데이트
                 }
 
                 // 현재 날짜 표시

@@ -15,7 +15,7 @@ interface AlarmStateDao {
     fun getAllAlarmStates(): Flow<List<AlarmStateEntity>>
 
     @Query("SELECT * FROM alarm_table WHERE id = :id")
-    fun getAlarmStateById(id: Long): Flow<AlarmStateEntity>
+    fun getAlarmStateById(id: Long): Flow<AlarmStateEntity?>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertAlarmState(alarmState: AlarmStateEntity)

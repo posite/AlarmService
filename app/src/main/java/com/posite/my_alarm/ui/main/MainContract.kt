@@ -12,7 +12,6 @@ class MainContract {
         data class InsertAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class UpdateAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class DeleteAlarm(val alarm: AlarmStateEntity) : MainEvent()
-        data class ChangeAlarmActivation(val alarm: AlarmStateEntity) : MainEvent()
     }
 
     data class MainUiState(
@@ -25,6 +24,5 @@ class MainContract {
         data class ShowAlarmDetails(val alarm: AlarmStateEntity) : MainEffect()
         data object NavigateToAlarmList : MainEffect()
         data class ItemInserted(val isSuccess: Boolean, val alarm: AlarmStateEntity) : MainEffect()
-        data class ItemUpdated(val isActivated: Boolean) : MainEffect()
     }
 }

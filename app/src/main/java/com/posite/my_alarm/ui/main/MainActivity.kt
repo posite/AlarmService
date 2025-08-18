@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -44,6 +45,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel by viewModels<MainViewModel>()
+    private var added: Intent? = null
+    private var removed: Intent? = null
 
     @Inject
     lateinit var alarmManager: AlarmManager
@@ -80,58 +83,77 @@ class MainActivity : ComponentActivity() {
                     hourState,
                     minuteState,
                     viewModel.currentState,
-                    onSwitchChanges = { isActive, item ->
+                    onSwitchChanges = { isActive, alarm ->
                         if (isActive) {
                             addAlarm(
-                                item.meridiem,
-                                item.hour,
-                                item.minute.toString(),
-                                createAlarmIntent(item).let { intent ->
+                                alarm.id.toInt(),
+                                alarm.meridiem,
+                                alarm.hour,
+                                alarm.minute.toString(),
+                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
                                     PendingIntent.getBroadcast(
-                                        context,
-                                        item.id.toInt(),
+                                        this@MainActivity,
+                                        alarm.id.toInt(),
                                         intent,
-                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                        PendingIntent.FLAG_IMMUTABLE
                                     )
                                 }
                             )
                         } else {
                             removeAlarm(
-                                createAlarmIntent(item).let { intent ->
+                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
                                     PendingIntent.getBroadcast(
-                                        context,
-                                        item.id.toInt(),
+                                        this@MainActivity,
+                                        alarm.id.toInt(),
                                         intent,
-                                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                        PendingIntent.FLAG_IMMUTABLE
                                     )
-                                }, item
+                                }, alarm
                             )
                         }
-                        viewModel.changeAlarmActivation(item.copy(isActive = isActive))
+                        viewModel.updateAlarmState(alarm.copy(isActive = isActive))
                         Log.d(
                             "MainActivity",
                             viewModel.currentState.alarmList.toString()
                         )
                     },
                     deleteAlarm = { alarm ->
-                        removeAlarm(createAlarmIntent(alarm).let { intent ->
+                        removed = createAlarmIntent(this@MainActivity, alarm)
+                        removeAlarm(createAlarmIntent(this@MainActivity, alarm).let { intent ->
                             PendingIntent.getBroadcast(
-                                context,
+                                this@MainActivity,
                                 alarm.id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                PendingIntent.FLAG_IMMUTABLE
                             )
                         }, alarm, DELETE_ALARM)
                         viewModel.deleteAlarmState(alarm)
                     },
-                    updateAlarm = {
+                    updateAlarm = { alarm ->
+                        if (alarm.isActive) {
+                            removed = createAlarmIntent(this@MainActivity, alarm)
+                            updateAlarm(
+                                alarm.id.toInt(),
+                                meridiemState.selectedItem,
+                                hourState.selectedItem,
+                                minuteState.selectedItem,
+                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
+                                    PendingIntent.getBroadcast(
+                                        this@MainActivity,
+                                        alarm.id.toInt(),
+                                        intent,
+                                        PendingIntent.FLAG_IMMUTABLE
+                                    )
+                                }
+                            )
+                        }
                         viewModel.updateAlarmState(
                             AlarmStateEntity(
-                                id = isAlarmClick.value!!.id,
+                                id = alarm.id,
                                 hour = hourState.selectedItem,
                                 minute = minuteState.selectedItem.toInt(),
                                 meridiem = meridiemState.selectedItem,
-                                isActive = true
+                                isActive = alarm.isActive
                             )
                         )
                     },
@@ -181,38 +203,28 @@ class MainActivity : ComponentActivity() {
                     when (it) {
                         is MainContract.MainEffect.ItemInserted -> {
                             delay(1000)
-                            val intent = createAlarmIntent(it.alarm)
+                            added = createAlarmIntent(
+                                this@MainActivity,
+                                it.alarm
+                            )
+                            Log.d("added", viewModel.currentState.alarmList.last().id.toString())
+                            val intent = createAlarmIntent(
+                                this@MainActivity,
+                                it.alarm.copy(id = viewModel.currentState.alarmList.last().id)
+                            )
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
-                                it.alarm.id.toInt(),
+                                viewModel.currentState.alarmList.last().id.toInt(),
                                 intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                                PendingIntent.FLAG_IMMUTABLE
                             )
                             addAlarm(
+                                viewModel.currentState.alarmList.last().id.toInt(),
                                 it.alarm.meridiem,
                                 it.alarm.hour,
                                 it.alarm.minute.toString(),
                                 pendingIntent
                             )
-                        }
-
-                        is MainContract.MainEffect.ItemUpdated -> {
-                            delay(1000)
-                            val intent = createAlarmIntent(viewModel.currentState.selectedAlarm!!)
-                            val pendingIntent = PendingIntent.getBroadcast(
-                                this@MainActivity,
-                                viewModel.currentState.selectedAlarm!!.id.toInt(),
-                                intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                            )
-                            if (it.isActivated) {
-                                updateAlarm(
-                                    viewModel.currentState.selectedAlarm!!.meridiem,
-                                    viewModel.currentState.selectedAlarm!!.hour,
-                                    viewModel.currentState.selectedAlarm!!.minute.toString(),
-                                    pendingIntent
-                                )
-                            }
                         }
 
                         else -> {}
@@ -222,8 +234,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createAlarmIntent(it: AlarmStateEntity): Intent =
-        Intent(this@MainActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
+    private fun createAlarmIntent(context: Context, it: AlarmStateEntity): Intent =
+        Intent(context, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
             .putExtra(ALARM_MERIDIEM, it.meridiem)
             .putExtra(ALARM_HOUR, it.hour)
             .putExtra(ALARM_MINUTE, it.minute)
@@ -234,12 +246,15 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("ScheduleExactAlarm")
     private fun addAlarm(
+        id: Int,
         meridiemState: String,
         hourState: Int,
         minuteState: String,
         intent: PendingIntent,
         isUpdated: Boolean = NOT_UPDATE
     ) {
+        //Log.d("intent", intent.hashCode().toString())
+        //Log.d("add", "id: $id")
         val alarmMills = getNextDate(
             AlarmStateEntity(
                 hour = hourState,
@@ -250,6 +265,7 @@ class MainActivity : ComponentActivity() {
         ).timeInMillis
 
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")
+        Log.d("add", "addAlarm: $meridiemState $hourState $minuteState")
         if (isUpdated) {
             Toast.makeText(
                 this,
@@ -285,7 +301,10 @@ class MainActivity : ComponentActivity() {
         alarm: AlarmStateEntity,
         isDeleted: Boolean = CANCEL_ALARM
     ) {
+        Log.d("remove", "removeAlarm: ${alarm.id} ${alarm.hour} ${alarm.minute} ${alarm.meridiem}")
         alarmManager.cancel(intent)
+        Log.d("remove", "id: ${alarm.id}")
+        Log.d("intent", intent.hashCode().toString())
         if (isDeleted) {
             Toast.makeText(
                 this,
@@ -309,20 +328,32 @@ class MainActivity : ComponentActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
+        //Log.d("compare", added!!.filterEquals(removed).toString())
     }
 
-    private fun removeAlarm(intent: PendingIntent) {
+    private fun removeAlarm(
+        id: Int,
+        intent: PendingIntent,
+        meridiem: String,
+        hour: Int,
+        minute: String
+    ) {
+        Log.d("remove", "removeAlarm: $meridiem $hour $minute")
+        Log.d("intent", intent.hashCode().toString())
+        Log.d("remove", "id: $id")
+        Log.d("compare", added!!.filterEquals(removed).toString())
         alarmManager.cancel(intent)
     }
 
     private fun updateAlarm(
+        id: Int,
         meridiemState: String,
         hourState: Int,
         minuteState: String,
         intent: PendingIntent
     ) {
-        removeAlarm(intent)
-        addAlarm(meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
+        removeAlarm(id, intent, meridiemState, hourState, minuteState)
+        addAlarm(id, meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
     }
 
     override fun onRequestPermissionsResult(

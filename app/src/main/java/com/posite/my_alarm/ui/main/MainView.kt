@@ -79,15 +79,13 @@ fun MainView(
     states: MainContract.MainUiState,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
-    updateAlarm: () -> Unit,
+    updateAlarm: (AlarmStateEntity) -> Unit,
     insertAlarm: () -> Unit,
 ) {
     val context = LocalContext.current
     var minTime by remember { mutableStateOf<AlarmStateEntity?>(null) }
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
-
-    var isTitleVisible by remember { mutableStateOf(true) }
 
     val scrollState = rememberScrollState()
     val nestedScrollConnection = remember {
@@ -98,13 +96,9 @@ fun MainView(
             ): Offset {
                 val delta = available.y
                 return if (delta < 0 && scrollState.value < scrollState.maxValue) {
-                    // 위로 스크롤할 때, 상단 영역 스크롤이 최대치에 도달하지 않았다면 상단 영역을 스크롤
-                    isTitleVisible = false
                     scrollState.dispatchRawDelta(-delta)
                     Offset(0f, delta)
                 } else if (delta > 0 && scrollState.value > 0) {
-                    // 아래로 스크롤할 때, 상단 영역이 완전히 보이지 않는다면 상단 영역을 스크롤
-                    isTitleVisible = true
                     val consume = minOf(scrollState.value.toFloat(), delta)
                     scrollState.dispatchRawDelta(-consume)
                     Offset(0f, consume)
@@ -166,7 +160,7 @@ fun MainView(
                 ),
                 onDismissRequest = { isAlarmClick.value = null },
                 onDoneClickListener = {
-                    updateAlarm()
+                    updateAlarm(isAlarmClick.value!!.copy())
                     isAlarmClick.value = null
                 },
                 meridiemState = meridiemState,
