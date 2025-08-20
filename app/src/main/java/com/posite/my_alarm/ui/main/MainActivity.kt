@@ -341,7 +341,7 @@ class MainActivity : ComponentActivity() {
         Log.d("remove", "removeAlarm: $meridiem $hour $minute")
         Log.d("intent", intent.hashCode().toString())
         Log.d("remove", "id: $id")
-        Log.d("compare", added!!.filterEquals(removed).toString())
+        //Log.d("compare", added!!.filterEquals(removed).toString())
         alarmManager.cancel(intent)
     }
 
