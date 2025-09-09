@@ -1,9 +1,11 @@
 package com.posite.my_alarm.ui.main
 
 import com.posite.my_alarm.data.entity.AlarmStateEntity
+import com.posite.my_alarm.ui.alarm.RemainTime
 import com.posite.my_alarm.ui.base.UiEffect
 import com.posite.my_alarm.ui.base.UiEvent
 import com.posite.my_alarm.ui.base.UiState
+import com.posite.my_alarm.util.Screen
 
 class MainContract {
     sealed class MainEvent : UiEvent {
@@ -12,11 +14,13 @@ class MainContract {
         data class InsertAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class UpdateAlarm(val alarm: AlarmStateEntity) : MainEvent()
         data class DeleteAlarm(val alarm: AlarmStateEntity) : MainEvent()
+        data class CalculateMinTime(val minTime: RemainTime?) : MainEvent()
     }
 
     data class MainUiState(
         val alarmList: List<AlarmStateEntity> = emptyList(),
         val selectedAlarm: AlarmStateEntity? = null,
+        val minTime: RemainTime? = null
     ) : UiState
 
     sealed class MainEffect : UiEffect {
@@ -24,5 +28,6 @@ class MainContract {
         data class ShowAlarmDetails(val alarm: AlarmStateEntity) : MainEffect()
         data object NavigateToAlarmList : MainEffect()
         data class ItemInserted(val isSuccess: Boolean, val alarm: AlarmStateEntity) : MainEffect()
+        data class NavigateToScreen(val screen: Screen) : MainEffect()
     }
 }

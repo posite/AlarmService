@@ -3,6 +3,8 @@ package com.posite.my_alarm.ui.main
 import androidx.lifecycle.viewModelScope
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.repository.TimeRepository
+import com.posite.my_alarm.ui.alarm.RemainTime
+import com.posite.my_alarm.ui.alarm.calculateRemainTime
 import com.posite.my_alarm.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -23,8 +25,9 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
         when (event) {
             is MainContract.MainEvent.GetAlarmList -> {
                 viewModelScope.launch {
-                    repository.getAlarmStates().collect {
-                        setState { copy(alarmList = it) }
+                    repository.getAlarmStates().collect { alarms ->
+                        setState { copy(alarmList = alarms) }
+                        setState { copy(minTime = calculateRemainTime(alarms)) }
                     }
                 }
             }
@@ -60,6 +63,14 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
                     repository.deleteAlarms(alarm = event.alarm)
                 }
             }
+
+            is MainContract.MainEvent.CalculateMinTime -> {
+                if (event.minTime != null) {
+                    setState { copy(minTime = event.minTime) }
+                } else {
+                    setState { copy(minTime = null) }
+                }
+            }
         }
     }
 
@@ -76,4 +87,8 @@ class MainViewModel @Inject constructor(private val repository: TimeRepository) 
 
     fun deleteAlarmState(alarm: AlarmStateEntity) =
         setEvent(MainContract.MainEvent.DeleteAlarm(alarm))
+
+    fun saveRemainTime(minTime: RemainTime?) =
+        setEvent(MainContract.MainEvent.CalculateMinTime(minTime))
+
 }

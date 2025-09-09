@@ -43,9 +43,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
+import com.posite.my_alarm.ui.alarm.getNextDate
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.ui.main.MainActivity.Companion.VERSION_CODE
-import com.posite.my_alarm.ui.main.getNextDate
 import com.posite.my_alarm.ui.slide.CircleUnlock
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
 import com.posite.my_alarm.util.AlarmReceiver
@@ -218,10 +218,7 @@ class LockActivity : ComponentActivity() {
                 CircleUnlock {
                     vibrator.cancel()
                     val currentDate = Calendar.getInstance()
-                    val calendar = getNextDate(
-                        AlarmStateEntity(id, hour, minute, meridiem, true),
-                        this@LockActivity
-                    )
+                    val calendar = getNextDate(AlarmStateEntity(id, hour, minute, meridiem, true))
                     if (currentDate.timeInMillis >= calendar.timeInMillis) calendar.add(
                         Calendar.DAY_OF_YEAR,
                         1
