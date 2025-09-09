@@ -17,16 +17,21 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
+import com.posite.my_alarm.ui.alarm.getNextDate
+import com.posite.my_alarm.ui.nav.AppNavigation
+import com.posite.my_alarm.ui.nav.BottomNavigationBar
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.util.AlarmReceiver
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
@@ -47,6 +52,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel by viewModels<MainViewModel>()
     private var added: Intent? = null
     private var removed: Intent? = null
+    private lateinit var navController: NavHostController
 
     @Inject
     lateinit var alarmManager: AlarmManager
@@ -60,12 +66,12 @@ class MainActivity : ComponentActivity() {
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         onEffect()
         setContent {
-            val context = LocalContext.current
             val meridiemState = remember { PickerState(DEFAULT_MERIDIEM) }
             val hourState = remember { PickerState(DEFAULT_HOUR) }
             val minuteState = remember { PickerState(DEFAULT_MINUTE) }
             val isDeleteMode = remember { mutableStateOf(DEFAULT_MODE_STATE) }
             val isAlarmClick = remember { mutableStateOf<AlarmStateEntity?>(null) }
+            navController = rememberNavController()
             MyAlarmTheme {
                 BackHandler {
                     if (isDeleteMode.value) {
@@ -75,99 +81,102 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                MainView(
-                    alarmManager,
-                    isDeleteMode,
-                    isAlarmClick,
-                    meridiemState,
-                    hourState,
-                    minuteState,
-                    viewModel.currentState,
-                    onSwitchChanges = { isActive, alarm ->
-                        if (isActive) {
-                            addAlarm(
-                                alarm.id.toInt(),
-                                alarm.meridiem,
-                                alarm.hour,
-                                alarm.minute.toString(),
-                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                    PendingIntent.getBroadcast(
-                                        this@MainActivity,
-                                        alarm.id.toInt(),
-                                        intent,
-                                        PendingIntent.FLAG_IMMUTABLE
-                                    )
-                                }
+                Scaffold(bottomBar = { BottomNavigationBar(navController) }) {
+                    AppNavigation(
+                        navController, isDeleteMode,
+                        isAlarmClick,
+                        meridiemState,
+                        hourState,
+                        minuteState,
+                        viewModel.currentState,
+                        onSwitchChanges = { isActive, alarm ->
+                            if (isActive) {
+                                addAlarm(
+                                    alarm.id.toInt(),
+                                    alarm.meridiem,
+                                    alarm.hour,
+                                    alarm.minute.toString(),
+                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
+                                        PendingIntent.getBroadcast(
+                                            this@MainActivity,
+                                            alarm.id.toInt(),
+                                            intent,
+                                            PendingIntent.FLAG_IMMUTABLE
+                                        )
+                                    }
+                                )
+                            } else {
+                                removeAlarm(
+                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
+                                        PendingIntent.getBroadcast(
+                                            this@MainActivity,
+                                            alarm.id.toInt(),
+                                            intent,
+                                            PendingIntent.FLAG_IMMUTABLE
+                                        )
+                                    }, alarm
+                                )
+                            }
+                            viewModel.updateAlarmState(alarm.copy(isActive = isActive))
+                            Log.d(
+                                "MainActivity",
+                                viewModel.currentState.alarmList.toString()
                             )
-                        } else {
-                            removeAlarm(
-                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                    PendingIntent.getBroadcast(
-                                        this@MainActivity,
-                                        alarm.id.toInt(),
-                                        intent,
-                                        PendingIntent.FLAG_IMMUTABLE
-                                    )
-                                }, alarm
-                            )
-                        }
-                        viewModel.updateAlarmState(alarm.copy(isActive = isActive))
-                        Log.d(
-                            "MainActivity",
-                            viewModel.currentState.alarmList.toString()
-                        )
-                    },
-                    deleteAlarm = { alarm ->
-                        removed = createAlarmIntent(this@MainActivity, alarm)
-                        removeAlarm(createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                            PendingIntent.getBroadcast(
-                                this@MainActivity,
-                                alarm.id.toInt(),
-                                intent,
-                                PendingIntent.FLAG_IMMUTABLE
-                            )
-                        }, alarm, DELETE_ALARM)
-                        viewModel.deleteAlarmState(alarm)
-                    },
-                    updateAlarm = { alarm ->
-                        if (alarm.isActive) {
+                        },
+                        deleteAlarm = { alarm ->
                             removed = createAlarmIntent(this@MainActivity, alarm)
-                            updateAlarm(
-                                alarm.id.toInt(),
-                                meridiemState.selectedItem,
-                                hourState.selectedItem,
-                                minuteState.selectedItem,
-                                createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                    PendingIntent.getBroadcast(
-                                        this@MainActivity,
-                                        alarm.id.toInt(),
-                                        intent,
-                                        PendingIntent.FLAG_IMMUTABLE
-                                    )
-                                }
+                            removeAlarm(createAlarmIntent(this@MainActivity, alarm).let { intent ->
+                                PendingIntent.getBroadcast(
+                                    this@MainActivity,
+                                    alarm.id.toInt(),
+                                    intent,
+                                    PendingIntent.FLAG_IMMUTABLE
+                                )
+                            }, alarm, DELETE_ALARM)
+                            viewModel.deleteAlarmState(alarm)
+                        },
+                        updateAlarm = { alarm ->
+                            if (alarm.isActive) {
+                                removed = createAlarmIntent(this@MainActivity, alarm)
+                                updateAlarm(
+                                    alarm.id.toInt(),
+                                    meridiemState.selectedItem,
+                                    hourState.selectedItem,
+                                    minuteState.selectedItem,
+                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
+                                        PendingIntent.getBroadcast(
+                                            this@MainActivity,
+                                            alarm.id.toInt(),
+                                            intent,
+                                            PendingIntent.FLAG_IMMUTABLE
+                                        )
+                                    }
+                                )
+                            }
+                            viewModel.updateAlarmState(
+                                AlarmStateEntity(
+                                    id = alarm.id,
+                                    hour = hourState.selectedItem,
+                                    minute = minuteState.selectedItem.toInt(),
+                                    meridiem = meridiemState.selectedItem,
+                                    isActive = alarm.isActive
+                                )
                             )
-                        }
-                        viewModel.updateAlarmState(
-                            AlarmStateEntity(
-                                id = alarm.id,
-                                hour = hourState.selectedItem,
-                                minute = minuteState.selectedItem.toInt(),
-                                meridiem = meridiemState.selectedItem,
-                                isActive = alarm.isActive
+                        },
+                        insertAlarm = {
+                            viewModel.insertAlarmState(
+                                AlarmStateEntity(
+                                    hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
+                                    minute = minuteState.selectedItem.toInt(),
+                                    meridiem = meridiemState.selectedItem,
+                                    isActive = true
+                                )
                             )
-                        )
-                    },
-                    insertAlarm = {
-                        viewModel.insertAlarmState(
-                            AlarmStateEntity(
-                                hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
-                                minute = minuteState.selectedItem.toInt(),
-                                meridiem = meridiemState.selectedItem,
-                                isActive = true
-                            )
-                        )
-                    }
-                )
+                        },
+                        calculateMinTime = { minTime ->
+                            viewModel.saveRemainTime(minTime)
+                        })
+                }
             }
         }
     }
@@ -227,6 +236,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        is MainContract.MainEffect.NavigateToScreen -> {
+                            navController.navigate(it.screen.route)
+                        }
+
                         else -> {}
                     }
                 }
@@ -261,7 +274,7 @@ class MainActivity : ComponentActivity() {
                 minute = minuteState.toInt(),
                 meridiem = meridiemState,
                 isActive = true,
-            ), this
+            )
         ).timeInMillis
 
         Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")

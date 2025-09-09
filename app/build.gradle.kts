@@ -15,8 +15,8 @@ android {
         applicationId = "com.posite.my_alarm"
         minSdk = 34
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.0"
+        versionCode = 11
+        versionName = "1.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -82,4 +82,8 @@ dependencies {
 
     //compose
     implementation(libs.compose.animation)
+
+    //navigation
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
 }
