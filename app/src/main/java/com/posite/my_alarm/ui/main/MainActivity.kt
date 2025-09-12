@@ -29,10 +29,13 @@ import androidx.navigation.compose.rememberNavController
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
+import com.posite.my_alarm.ui.alarm.AlarmContract
+import com.posite.my_alarm.ui.alarm.AlarmViewModel
 import com.posite.my_alarm.ui.alarm.getNextDate
 import com.posite.my_alarm.ui.nav.AppNavigation
 import com.posite.my_alarm.ui.nav.BottomNavigationBar
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.timer.TimerViewModel
 import com.posite.my_alarm.util.AlarmReceiver
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
@@ -49,7 +52,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val viewModel by viewModels<MainViewModel>()
+    private val alarmVM by viewModels<AlarmViewModel>()
+    private val timerVM by viewModels<TimerViewModel>()
     private var added: Intent? = null
     private var removed: Intent? = null
     private lateinit var navController: NavHostController
@@ -62,7 +66,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         requestPermission(this, alarmManager)
-        viewModel.getAlarmList()
+        alarmVM.getAlarmList()
         this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         onEffect()
         setContent {
@@ -88,7 +92,8 @@ class MainActivity : ComponentActivity() {
                         meridiemState,
                         hourState,
                         minuteState,
-                        viewModel.currentState,
+                        alarmVM.currentState,
+                        timerVM.currentState,
                         onSwitchChanges = { isActive, alarm ->
                             if (isActive) {
                                 addAlarm(
@@ -117,10 +122,10 @@ class MainActivity : ComponentActivity() {
                                     }, alarm
                                 )
                             }
-                            viewModel.updateAlarmState(alarm.copy(isActive = isActive))
+                            alarmVM.updateAlarmState(alarm.copy(isActive = isActive))
                             Log.d(
                                 "MainActivity",
-                                viewModel.currentState.alarmList.toString()
+                                alarmVM.currentState.alarmList.toString()
                             )
                         },
                         deleteAlarm = { alarm ->
@@ -133,7 +138,7 @@ class MainActivity : ComponentActivity() {
                                     PendingIntent.FLAG_IMMUTABLE
                                 )
                             }, alarm, DELETE_ALARM)
-                            viewModel.deleteAlarmState(alarm)
+                            alarmVM.deleteAlarmState(alarm)
                         },
                         updateAlarm = { alarm ->
                             if (alarm.isActive) {
@@ -153,7 +158,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 )
                             }
-                            viewModel.updateAlarmState(
+                            alarmVM.updateAlarmState(
                                 AlarmStateEntity(
                                     id = alarm.id,
                                     hour = hourState.selectedItem,
@@ -164,7 +169,7 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         insertAlarm = {
-                            viewModel.insertAlarmState(
+                            alarmVM.insertAlarmState(
                                 AlarmStateEntity(
                                     hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
                                     minute = minuteState.selectedItem.toInt(),
@@ -174,8 +179,24 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         calculateMinTime = { minTime ->
-                            viewModel.saveRemainTime(minTime)
-                        })
+                            alarmVM.saveRemainTime(minTime)
+                        },
+                        onTimerSet = { time ->
+                            timerVM.setTimer(time)
+                        },
+                        onTimerTikTok = {
+                            timerVM.tikTok()
+                        },
+                        onTimerDelete = {
+                            timerVM.deleteTimer()
+                        },
+                        onTimerPause = {
+                            timerVM.pauseTimer()
+                        },
+                        onTimerRestart = {
+                            timerVM.restartTimer()
+                        }
+                    )
                 }
             }
         }
@@ -208,27 +229,27 @@ class MainActivity : ComponentActivity() {
     private fun onEffect() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.effect.collect {
+                alarmVM.effect.collect {
                     when (it) {
-                        is MainContract.MainEffect.ItemInserted -> {
+                        is AlarmContract.AlarmEffect.ItemInserted -> {
                             delay(1000)
                             added = createAlarmIntent(
                                 this@MainActivity,
                                 it.alarm
                             )
-                            Log.d("added", viewModel.currentState.alarmList.last().id.toString())
+                            Log.d("added", alarmVM.currentState.alarmList.last().id.toString())
                             val intent = createAlarmIntent(
                                 this@MainActivity,
-                                it.alarm.copy(id = viewModel.currentState.alarmList.last().id)
+                                it.alarm.copy(id = alarmVM.currentState.alarmList.last().id)
                             )
                             val pendingIntent = PendingIntent.getBroadcast(
                                 this@MainActivity,
-                                viewModel.currentState.alarmList.last().id.toInt(),
+                                alarmVM.currentState.alarmList.last().id.toInt(),
                                 intent,
                                 PendingIntent.FLAG_IMMUTABLE
                             )
                             addAlarm(
-                                viewModel.currentState.alarmList.last().id.toInt(),
+                                alarmVM.currentState.alarmList.last().id.toInt(),
                                 it.alarm.meridiem,
                                 it.alarm.hour,
                                 it.alarm.minute.toString(),
@@ -236,7 +257,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        is MainContract.MainEffect.NavigateToScreen -> {
+                        is AlarmContract.AlarmEffect.NavigateToScreen -> {
                             navController.navigate(it.screen.route)
                         }
 
@@ -398,7 +419,9 @@ class MainActivity : ComponentActivity() {
         const val VERSION_CODE = "CODE"
         const val DEFAULT_MERIDIEM = "오전"
         const val DEFAULT_HOUR = 6
+        const val DEFAULT_HOUR_STRING = "00"
         const val DEFAULT_MINUTE = "00"
+        const val DEFAULT_SECOND = "00"
         const val DEFAULT_MODE_STATE = false
         const val ALARM_MODE_TITLE = "알람"
         private const val UPDATE_ALARM = true

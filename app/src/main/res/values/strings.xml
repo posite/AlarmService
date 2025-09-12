@@ -10,4 +10,12 @@
     <string name="update_alarm_toast">"%s %d시 %d분 으로 알람이 변경되었습니다."</string>
     <string name="am">"오전"</string>
     <string name="pm">"오후"</string>
+    <string name="initial_time_hour">"%d시 %d분 %d초"</string>
+    <string name="initial_time_minute">"%d분 %d초"</string>
+    <string name="initial_time_second">"%d초"</string>
+
+    <string name="count_time_hour">"%d : %d : %d"</string>
+    <string name="count_time_minute">"%d : %d"</string>
+    <string name="count_time_second">"%d"</string>
+    <string name="result_time"> "%s %d : %d"</string>
 </resources>

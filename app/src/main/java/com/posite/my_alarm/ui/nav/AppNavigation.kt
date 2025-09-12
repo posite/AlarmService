@@ -7,9 +7,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
+import com.posite.my_alarm.ui.alarm.AlarmContract
 import com.posite.my_alarm.ui.alarm.AlarmScreen
 import com.posite.my_alarm.ui.alarm.RemainTime
-import com.posite.my_alarm.ui.main.MainContract
+import com.posite.my_alarm.ui.timer.TimerContract
+import com.posite.my_alarm.ui.timer.TimerScreen
 import com.posite.my_alarm.util.Screen
 
 @Composable
@@ -19,12 +21,18 @@ fun AppNavigation(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
     minuteState: PickerState<String>,
-    states: MainContract.MainUiState,
+    alarmStates: AlarmContract.AlarmUiState,
+    timerStates: TimerContract.TimerUiState,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
     updateAlarm: (AlarmStateEntity) -> Unit,
     insertAlarm: () -> Unit,
-    calculateMinTime: (RemainTime?) -> Unit
+    calculateMinTime: (RemainTime?) -> Unit,
+    onTimerSet: (Int) -> Unit,
+    onTimerTikTok: () -> Unit,
+    onTimerDelete: () -> Unit,
+    onTimerPause: () -> Unit,
+    onTimerRestart: () -> Unit
 ) {
 
     NavHost(
@@ -38,7 +46,7 @@ fun AppNavigation(
                 meridiemState,
                 hourState,
                 minuteState,
-                states,
+                alarmStates,
                 onSwitchChanges,
                 deleteAlarm,
                 updateAlarm,
@@ -48,7 +56,14 @@ fun AppNavigation(
         }
 
         composable(Screen.TimerScreen.route) {
-            Screen.TimerScreen
+            TimerScreen(
+                timerStates,
+                onTimerSet,
+                onTimerTikTok,
+                onTimerDelete,
+                onTimerPause,
+                onTimerRestart
+            )
         }
     }
 }

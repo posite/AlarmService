@@ -58,7 +58,6 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_HOUR
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MERIDIEM
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
-import com.posite.my_alarm.ui.main.MainContract
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
@@ -70,7 +69,7 @@ fun AlarmScreen(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
     minuteState: PickerState<String>,
-    states: MainContract.MainUiState,
+    states: AlarmContract.AlarmUiState,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
     updateAlarm: (AlarmStateEntity) -> Unit,
@@ -181,7 +180,7 @@ fun AlarmScreen(
 fun MinRemainAlarm(
     scrollValue: Int,
     minTime: RemainTime?,
-    states: MainContract.MainUiState,
+    states: AlarmContract.AlarmUiState,
     calculateMinTime: (RemainTime?) -> Unit
 ) {
     LaunchedEffect(minTime) {
