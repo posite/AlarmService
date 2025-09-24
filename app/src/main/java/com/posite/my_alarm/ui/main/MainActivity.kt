@@ -34,6 +34,7 @@ import com.posite.my_alarm.ui.alarm.AlarmViewModel
 import com.posite.my_alarm.ui.alarm.getNextDate
 import com.posite.my_alarm.ui.nav.AppNavigation
 import com.posite.my_alarm.ui.nav.BottomNavigationBar
+import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 import com.posite.my_alarm.ui.timer.TimerViewModel
 import com.posite.my_alarm.util.AlarmReceiver
@@ -55,7 +56,6 @@ class MainActivity : ComponentActivity() {
     private val alarmVM by viewModels<AlarmViewModel>()
     private val timerVM by viewModels<TimerViewModel>()
     private var added: Intent? = null
-    private var removed: Intent? = null
     private lateinit var navController: NavHostController
 
     @Inject
@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
             val minuteState = remember { PickerState(DEFAULT_MINUTE) }
             val isDeleteMode = remember { mutableStateOf(DEFAULT_MODE_STATE) }
             val isAlarmClick = remember { mutableStateOf<AlarmStateEntity?>(null) }
+            val selectedDayOfWeek = remember { mutableSetOf<DayOfWeek>() }
             navController = rememberNavController()
             MyAlarmTheme {
                 BackHandler {
@@ -94,6 +95,7 @@ class MainActivity : ComponentActivity() {
                         minuteState,
                         alarmVM.currentState,
                         timerVM.currentState,
+                        selectedDayOfWeek,
                         onSwitchChanges = { isActive, alarm ->
                             if (isActive) {
                                 addAlarm(
@@ -129,7 +131,7 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         deleteAlarm = { alarm ->
-                            removed = createAlarmIntent(this@MainActivity, alarm)
+                            //if(selectedDayOfWeek.isNotEmpty()) {}
                             removeAlarm(createAlarmIntent(this@MainActivity, alarm).let { intent ->
                                 PendingIntent.getBroadcast(
                                     this@MainActivity,
@@ -141,8 +143,8 @@ class MainActivity : ComponentActivity() {
                             alarmVM.deleteAlarmState(alarm)
                         },
                         updateAlarm = { alarm ->
+                            //if(selectedDayOfWeek.isNotEmpty()) {}
                             if (alarm.isActive) {
-                                removed = createAlarmIntent(this@MainActivity, alarm)
                                 updateAlarm(
                                     alarm.id.toInt(),
                                     meridiemState.selectedItem,
@@ -167,8 +169,10 @@ class MainActivity : ComponentActivity() {
                                     isActive = alarm.isActive
                                 )
                             )
+                            selectedDayOfWeek.clear()
                         },
                         insertAlarm = {
+                            //if(selectedDayOfWeek.isNotEmpty()) {}
                             alarmVM.insertAlarmState(
                                 AlarmStateEntity(
                                     hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
@@ -177,6 +181,7 @@ class MainActivity : ComponentActivity() {
                                     isActive = true
                                 )
                             )
+                            selectedDayOfWeek.clear()
                         },
                         calculateMinTime = { minTime ->
                             alarmVM.saveRemainTime(minTime)

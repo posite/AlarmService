@@ -1,14 +1,14 @@
 package com.posite.my_alarm.ui.picker
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,23 +16,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.posite.my_alarm.R
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
 
 
 @Composable
 fun TimePickerDialog(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     properties: DialogProperties,
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
@@ -40,6 +34,7 @@ fun TimePickerDialog(
     meridiem: String,
     hour: Int,
     minute: Int,
+    selectedDayOfWeek: MutableSet<DayOfWeek>,
     onDismissRequest: () -> Unit,
     onDoneClickListener: () -> Unit
 ) {
@@ -53,30 +48,20 @@ fun TimePickerDialog(
             )
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "시간 선택",
-                    style = TextStyle(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .padding(top = 16.dp),
-                    textAlign = TextAlign.Start
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-
-                TimePicker(meridiemState, hourState, minuteState, meridiem, hour, minute)
-                HorizontalDivider(
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .padding(vertical = 8.dp)
-                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(modifier = Modifier.padding(24.dp, 0.dp)) {
+                    TimePicker(
+                        meridiemState,
+                        hourState,
+                        minuteState,
+                        meridiem,
+                        hour,
+                        minute
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                DayOfWeekScreen(selectedDayOfWeek)
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -88,11 +73,15 @@ fun TimePickerDialog(
                         onClick = onDismissRequest,
                     ) {
                         Text("Cancel")
+                        selectedDayOfWeek.clear()
                     }
 
                     TextButton(
                         modifier = Modifier,
-                        onClick = onDoneClickListener,
+                        onClick = {
+                            Log.d("TimePickerDialog", selectedDayOfWeek.toString())
+                            onDoneClickListener()
+                        },
                     ) {
                         Text("Done")
                     }
@@ -106,21 +95,21 @@ fun TimePickerDialog(
 @Preview(showBackground = true)
 fun TimePickerDialogPreview() {
     MyAlarmTheme {
-        TimePickerDialog(
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
-            ),
-            onDismissRequest = {},
-            onDoneClickListener = {
-
-            },
-            meridiemState = PickerState(stringResource(R.string.am)),
-            hourState = PickerState(6),
-            minuteState = PickerState("00"),
-            meridiem = stringResource(R.string.am),
-            hour = 6,
-            minute = 0,
-        )
+//        TimePickerDialog(
+//            properties = DialogProperties(
+//                dismissOnBackPress = true,
+//                dismissOnClickOutside = true,
+//            ),
+//            onDismissRequest = {},
+//            onDoneClickListener = {
+//
+//            },
+//            meridiemState = PickerState(stringResource(R.string.am)),
+//            hourState = PickerState(6),
+//            minuteState = PickerState("00"),
+//            meridiem = stringResource(R.string.am),
+//            hour = 6,
+//            minute = 0,
+//        )
     }
 }

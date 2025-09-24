@@ -10,6 +10,7 @@ import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.alarm.AlarmContract
 import com.posite.my_alarm.ui.alarm.AlarmScreen
 import com.posite.my_alarm.ui.alarm.RemainTime
+import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.timer.TimerContract
 import com.posite.my_alarm.ui.timer.TimerScreen
 import com.posite.my_alarm.util.Screen
@@ -23,6 +24,7 @@ fun AppNavigation(
     minuteState: PickerState<String>,
     alarmStates: AlarmContract.AlarmUiState,
     timerStates: TimerContract.TimerUiState,
+    selectedDayOfWeek: MutableSet<DayOfWeek>,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
     updateAlarm: (AlarmStateEntity) -> Unit,
@@ -46,6 +48,7 @@ fun AppNavigation(
                 meridiemState,
                 hourState,
                 minuteState,
+                selectedDayOfWeek,
                 alarmStates,
                 onSwitchChanges,
                 deleteAlarm,

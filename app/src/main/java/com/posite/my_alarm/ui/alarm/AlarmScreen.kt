@@ -58,6 +58,7 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_HOUR
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MERIDIEM
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MINUTE
 import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
+import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
@@ -69,6 +70,7 @@ fun AlarmScreen(
     meridiemState: PickerState<String>,
     hourState: PickerState<Int>,
     minuteState: PickerState<String>,
+    selectedDayOfWeek: MutableSet<DayOfWeek>,
     states: AlarmContract.AlarmUiState,
     onSwitchChanges: (Boolean, AlarmStateEntity) -> Unit,
     deleteAlarm: (AlarmStateEntity) -> Unit,
@@ -134,10 +136,14 @@ fun AlarmScreen(
                 meridiem = isAlarmClick.value!!.meridiem,
                 hour = isAlarmClick.value!!.hour,
                 minute = isAlarmClick.value!!.minute,
-                modifier = Modifier.background(color = Color.White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color.Transparent)
+                    .padding(12.dp, 20.dp),
                 properties = DialogProperties(
                     dismissOnBackPress = true,
                     dismissOnClickOutside = true,
+                    usePlatformDefaultWidth = false
                 ),
                 onDismissRequest = { isAlarmClick.value = null },
                 onDoneClickListener = {
@@ -146,7 +152,8 @@ fun AlarmScreen(
                 },
                 meridiemState = meridiemState,
                 hourState = hourState,
-                minuteState = minuteState
+                minuteState = minuteState,
+                selectedDayOfWeek = selectedDayOfWeek
             )
         }
         if (isShowTimePicker.value) {
@@ -154,10 +161,14 @@ fun AlarmScreen(
             hourState.selectedItem = DEFAULT_HOUR
             minuteState.selectedItem = DEFAULT_MINUTE
             TimePickerDialog(
-                modifier = Modifier.background(color = Color.White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color.Transparent)
+                    .padding(12.dp, 20.dp),
                 properties = DialogProperties(
                     dismissOnBackPress = true,
                     dismissOnClickOutside = true,
+                    usePlatformDefaultWidth = false
                 ),
                 onDismissRequest = { isShowTimePicker.value = false },
                 onDoneClickListener = {
@@ -169,7 +180,8 @@ fun AlarmScreen(
                 minuteState = minuteState,
                 meridiem = DEFAULT_MERIDIEM,
                 hour = DEFAULT_HOUR,
-                minute = DEFAULT_MINUTE.toInt()
+                minute = DEFAULT_MINUTE.toInt(),
+                selectedDayOfWeek = selectedDayOfWeek
             )
         }
     }

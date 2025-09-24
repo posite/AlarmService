@@ -35,7 +35,7 @@ fun TimePicker(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
         val context = LocalContext.current
@@ -90,8 +90,8 @@ fun TimePicker(
                 .height(120.dp),
             items = listOf(stringResource(R.string.am), stringResource(R.string.pm)),
             state = meridiemState,
-            textStyle = TextStyle(fontSize = 24.sp),
-            selectedTextStyle = TextStyle(fontSize = 24.sp),
+            textStyle = TextStyle(fontSize = 32.sp),
+            selectedTextStyle = TextStyle(fontSize = 32.sp),
             visibleItemsCount = 2,
             isInfinity = false,
             startIndex = if (meridiem == stringResource(R.string.pm)) 1 else 0,
@@ -107,28 +107,28 @@ fun TimePicker(
 
 
         Picker(
-            modifier = Modifier.width(40.dp),
+            modifier = Modifier.width(60.dp),
             items = (1..12).toList(),
             state = hourState,
             startIndex = hour,
-            textStyle = TextStyle(fontSize = 24.sp),
-            selectedTextStyle = TextStyle(fontSize = 24.sp),
+            textStyle = TextStyle(fontSize = 32.sp),
+            selectedTextStyle = TextStyle(fontSize = 32.sp),
             visibleItemsCount = 3,
             lazyListState = listHourState
         )
 
         Text(
             text = ":",
-            style = TextStyle(fontSize = 24.sp),
+            style = TextStyle(fontSize = 32.sp),
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
         Picker(
-            modifier = Modifier.width(40.dp),
+            modifier = Modifier.width(60.dp),
             items = (0..59).map { stringResource(R.string.number_format, it) }.toList(),
             state = minuteState,
-            textStyle = TextStyle(fontSize = 24.sp),
-            selectedTextStyle = TextStyle(fontSize = 24.sp),
+            textStyle = TextStyle(fontSize = 32.sp),
+            selectedTextStyle = TextStyle(fontSize = 32.sp),
             visibleItemsCount = 3,
             lazyListState = null,
             startIndex = minute
