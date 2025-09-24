@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -19,7 +20,7 @@ fun CountDownTimerPicker(
     minuteState: PickerState<String>,
     secondState: PickerState<String>
 ) {
-    Row {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Picker(
             modifier = Modifier.width(80.dp),
             items = (0..99).map { stringResource(R.string.number_format, it) }.toList(),
@@ -33,7 +34,7 @@ fun CountDownTimerPicker(
 
         Text(
             text = ":",
-            style = TextStyle(fontSize = 40.sp),
+            style = TextStyle(fontSize = 48.sp),
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
@@ -50,7 +51,7 @@ fun CountDownTimerPicker(
 
         Text(
             text = ":",
-            style = TextStyle(fontSize = 40.sp),
+            style = TextStyle(fontSize = 48.sp),
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
