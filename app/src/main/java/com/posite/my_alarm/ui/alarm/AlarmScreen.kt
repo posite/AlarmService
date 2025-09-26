@@ -206,7 +206,10 @@ fun MinRemainAlarm(
 ) {
     LaunchedEffect(minTime) {
         while (true) {
-            calculateMinTime(calculateRemainTime(states.alarmList))
+            if (states.alarmList.isNotEmpty()) {
+                calculateMinTime(calculateRemainTime(states.alarmList))
+                Log.d("MainActivity", "MinRemainAlarm: $minTime")
+            }
             delay(1000)
         }
     }
@@ -495,6 +498,7 @@ fun getNextDate(alarm: AlarmStateEntity): Calendar {
 }
 
 fun calculateRemainTime(alarms: List<AlarmStateEntity>): RemainTime? {
+    //Log.d("MainActivity", "alarms: $alarms")
     while (alarms.isNotEmpty()) {
         val remainTime = checkTimeChange(alarms.filter { it.isActive }
             .minByOrNull { getNextDate(it).timeInMillis }!!)
