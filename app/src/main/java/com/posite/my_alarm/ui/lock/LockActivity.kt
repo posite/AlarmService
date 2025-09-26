@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.icu.text.SimpleDateFormat
+import android.icu.util.Calendar
 import android.os.Bundle
 import android.os.CombinedVibration
 import android.os.VibrationEffect
@@ -57,7 +58,6 @@ import com.posite.my_alarm.util.AlarmSoundPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -217,12 +217,7 @@ class LockActivity : ComponentActivity() {
                     }*/
                 CircleUnlock {
                     vibrator.cancel()
-                    val currentDate = Calendar.getInstance()
                     val calendar = getNextDate(AlarmStateEntity(id, hour, minute, meridiem, true))
-                    if (currentDate.timeInMillis >= calendar.timeInMillis) calendar.add(
-                        Calendar.DAY_OF_YEAR,
-                        1
-                    )
                     alarmSoundPlayer.stop()
                     updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                 }
@@ -232,7 +227,7 @@ class LockActivity : ComponentActivity() {
 
     @SuppressLint("ScheduleExactAlarm")
     private fun updateAlarm(
-        calendar: android.icu.util.Calendar,
+        calendar: Calendar,
         id: Int,
         meridiem: String,
         hour: Int,
@@ -275,6 +270,34 @@ class LockActivity : ComponentActivity() {
         )
         finish()
     }
+
+//    fun getNextDate(alarm: AlarmStateEntity): Calendar {
+//        val current = System.currentTimeMillis()
+//        val calendar: Calendar = Calendar.getInstance().apply {
+//            timeInMillis = current
+//            if (alarm.meridiem == AlarmApplication.Companion.getString(R.string.pm)) {
+//                if (alarm.hour == 12) {
+//                    set(Calendar.HOUR_OF_DAY, alarm.hour)
+//                } else {
+//                    set(Calendar.HOUR_OF_DAY, alarm.hour + 12)
+//                }
+//            } else {
+//                if (alarm.hour == 12) {
+//                    set(Calendar.HOUR_OF_DAY, 0)
+//                } else {
+//                    set(Calendar.HOUR_OF_DAY, alarm.hour)
+//                }
+//            }
+//            set(Calendar.MINUTE, alarm.minute)
+//            set(Calendar.SECOND, 0)
+//        }
+//        if (current >= calendar.timeInMillis) {
+//            calendar.add(Calendar.DATE, 1)
+//        }
+//        Log.d("TimeMillis", "current: $current, calendar: ${calendar.timeInMillis}")
+//        Log.d("calendar", "getNextDate: ${calendar.time}")
+//        return calendar
+//    }
 
     companion object {
         private const val DATE_FORMAT = "yyyy년 MM월 dd일"

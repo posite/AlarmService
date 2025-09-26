@@ -1,6 +1,6 @@
 [versions]
 agp = "8.7.3"
-kotlin = "2.0.21"
+kotlin = "2.2.20"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -8,9 +8,9 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
 composeBom = "2024.04.01"
-room = "2.6.1"
-ksp = "2.0.21-1.0.27"
-hilt = "2.49"
+room = "2.8.0"
+ksp = "2.1.20-2.0.1"
+hilt = "2.56"
 material = "1.12.0"
 appcompat = "1.7.0"
 constraintlayout = "2.2.1"
@@ -18,6 +18,7 @@ navigation = "2.8.9"
 workRuntimeKtx = "2.10.0"
 hiltCommon = "1.2.0"
 animation = "1.7.8"
+kotlin-datetime = "0.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,6 +51,7 @@ hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hi
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltCommon" }
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltCommon" }
 compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin-datetime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

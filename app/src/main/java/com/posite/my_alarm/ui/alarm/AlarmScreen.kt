@@ -61,7 +61,16 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import java.time.LocalDateTime
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun AlarmScreen(
@@ -451,30 +460,38 @@ fun AlarmListTitle(
     }
 }
 
+@OptIn(ExperimentalTime::class)
 fun getNextDate(alarm: AlarmStateEntity): Calendar {
-    val calendar: Calendar = Calendar.getInstance().apply {
-        timeInMillis = System.currentTimeMillis()
-        if (alarm.meridiem == getString(R.string.pm)) {
-            if (alarm.hour == 12) {
-                set(Calendar.HOUR_OF_DAY, alarm.hour)
-            } else {
-                set(Calendar.HOUR_OF_DAY, alarm.hour + 12)
-            }
-        } else {
-            if (alarm.hour == 12) {
-                set(Calendar.HOUR_OF_DAY, 0)
-            } else {
-                set(Calendar.HOUR_OF_DAY, alarm.hour)
-            }
-        }
-        set(Calendar.MINUTE, alarm.minute)
-        set(Calendar.SECOND, 0)
+    val now = Clock.System.now()
+    val timeZone = TimeZone.currentSystemDefault()
+
+    // 현재 시간을 LocalDateTime으로 변환
+    val currentDateTime = now.toLocalDateTime(timeZone)
+
+    // 24시간 형식 변환 (기존 로직과 동일)
+    val hour24 = if (alarm.meridiem == getString(R.string.pm)) {
+        if (alarm.hour == 12) alarm.hour else alarm.hour + 12
+    } else {
+        if (alarm.hour == 12) 0 else alarm.hour
     }
-    //Log.d("MainActivity", "calendar: ${calendar.get(Calendar.HOUR_OF_DAY)}")
-    if (System.currentTimeMillis() >= calendar.timeInMillis) {
-        calendar.add(Calendar.DAY_OF_YEAR, 1)
+
+    // 오늘의 알람 시간 생성
+    val alarmTime = LocalTime(hour24, alarm.minute, 0)
+    var alarmDateTime = currentDateTime.date.atTime(alarmTime)
+
+    // 현재 시간과 비교하여 다음 실행 시간 결정
+    if (now.epochSeconds * 1000 + now.nanosecondsOfSecond / 1_000_000 >=
+        alarmDateTime.toInstant(timeZone).epochSeconds * 1000 +
+        alarmDateTime.toInstant(timeZone).nanosecondsOfSecond / 1_000_000
+    ) {
+        alarmDateTime = alarmDateTime.date.plus(1, DateTimeUnit.DAY).atTime(alarmTime)
     }
-    return calendar
+
+    // Calendar로 변환 반환
+    return Calendar.getInstance().apply {
+        val instant = alarmDateTime.toInstant(timeZone)
+        timeInMillis = instant.epochSeconds * 1000 + instant.nanosecondsOfSecond / 1_000_000
+    }
 }
 
 fun calculateRemainTime(alarms: List<AlarmStateEntity>): RemainTime? {
