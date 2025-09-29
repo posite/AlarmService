@@ -13,10 +13,17 @@ class TimerContract {
         data object RestartTimer : TimerEvent()
     }
 
+    sealed class TimerState {
+        data object Initial : TimerState()
+        data object Running : TimerState()
+        data object Paused : TimerState()
+        data object Finished : TimerState()
+    }
+
     data class TimerUiState(
         val initialTime: Int = -1,
         val remainTime: Int = -1,
-        val isRunning: Boolean = false
+        val isRunning: TimerState = TimerState.Initial
     ) : UiState
 
     sealed class TimerEffect : UiEffect {
@@ -24,3 +31,4 @@ class TimerContract {
     }
 
 }
+

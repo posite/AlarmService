@@ -15,13 +15,15 @@ class TimerViewModel @Inject constructor() :
     override fun handleEvent(event: TimerContract.TimerEvent) {
         when (event) {
             is TimerContract.TimerEvent.TikTok -> {
-                val currentTime = currentState.remainTime
-                if (currentTime > 0) {
-                    setState { copy(remainTime = currentTime - 1, isRunning = true) }
-                } else {
-                    setState { copy(remainTime = 0, isRunning = false) }
+                if (currentState.isRunning == TimerContract.TimerState.Running) {
+                    if (currentState.remainTime > 0) {
+                        setState { copy(remainTime = currentState.remainTime - 1) }
+                    } else {
+                        setState { copy(isRunning = TimerContract.TimerState.Finished) }
+                    }
                 }
             }
+
 
             is TimerContract.TimerEvent.SetTimer -> {
                 if (event.timeInSeconds > 0) {
@@ -29,26 +31,38 @@ class TimerViewModel @Inject constructor() :
                         copy(
                             initialTime = event.timeInSeconds,
                             remainTime = event.timeInSeconds,
-                            isRunning = true
+                            isRunning = TimerContract.TimerState.Running
                         )
                     }
                 } else {
-                    setState { copy(initialTime = 0, remainTime = 0, isRunning = false) }
+                    setState {
+                        copy(
+                            initialTime = 0,
+                            remainTime = 0,
+                            isRunning = TimerContract.TimerState.Initial
+                        )
+                    }
                 }
             }
 
             is TimerContract.TimerEvent.DeleteTimer -> {
-                setState { copy(initialTime = 0, remainTime = 0, isRunning = false) }
+                setState {
+                    copy(
+                        initialTime = 0,
+                        remainTime = 0,
+                        isRunning = TimerContract.TimerState.Finished
+                    )
+                }
             }
 
             is TimerContract.TimerEvent.PauseTimer -> {
-                setState { copy(isRunning = false) }
+                setState { copy(isRunning = TimerContract.TimerState.Paused) }
                 Log.d("TimerViewModel - PauseTimer", "pause")
             }
 
             is TimerContract.TimerEvent.RestartTimer -> {
                 if (currentState.remainTime > 0) {
-                    setState { copy(isRunning = true) }
+                    setState { copy(isRunning = TimerContract.TimerState.Running) }
                     Log.d("TimerViewModel - RestartTimer", "restart")
                 }
             }

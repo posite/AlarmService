@@ -40,6 +40,11 @@ import com.posite.my_alarm.ui.picker.CountDownTimerPicker
 import com.posite.my_alarm.ui.theme.LightSkyBlue
 import com.posite.my_alarm.ui.theme.SkyBlue
 import kotlinx.coroutines.delay
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun TimerScreen(
@@ -52,9 +57,9 @@ fun TimerScreen(
 ) {
     Log.d("TimerScreen", "uiState: ${uiState.isRunning}")
     LaunchedEffect(uiState.remainTime, uiState.isRunning) {
-        delay(1000)
-        Log.d("LaunchedEffect", "uiState: ${uiState.isRunning}")
-        if (uiState.isRunning) {
+        //Log.d("LaunchedEffect", "uiState: ${uiState.isRunning}")
+        delay(980)
+        if (uiState.isRunning == TimerContract.TimerState.Running) {
             onTimerTikTok()
         }
     }
@@ -99,6 +104,7 @@ private fun SettingTimeScreen(onTimerSet: (Int) -> Unit) {
 
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
 private fun DrawTimer(
     uiState: TimerContract.TimerUiState,
@@ -124,8 +130,8 @@ private fun DrawTimer(
         stringResource(R.string.initial_time_second, uiState.initialTime % 60)
     }
 
-    val resultTime = Calendar.getInstance()
-    resultTime.timeInMillis += uiState.remainTime
+    val now = Clock.System.now() + uiState.remainTime.seconds
+    val resultTime = now.toLocalDateTime(TimeZone.currentSystemDefault())
 
     val remainTime = if (uiState.remainTime / 3600 >= 1) {
         stringResource(
@@ -146,9 +152,7 @@ private fun DrawTimer(
 
     LaunchedEffect(uiState.isRunning) {
         Log.d("DrawTimer", "uiState: ${uiState.isRunning}")
-        if (uiState.isRunning.not()) {
-            progress.stop()
-        } else {
+        if (uiState.isRunning == TimerContract.TimerState.Running) {
             progress.animateTo(
                 targetValue = 0f,
                 animationSpec = tween(
@@ -156,6 +160,8 @@ private fun DrawTimer(
                     easing = LinearEasing
                 )
             )
+        } else {
+            progress.stop()
         }
 
     }
@@ -174,7 +180,7 @@ private fun DrawTimer(
             CircularProgressIndicator(
                 progress = { progress.value },
                 modifier = Modifier.size(350.dp),
-                color = if (uiState.isRunning) SkyBlue else Color.LightGray,
+                color = if (uiState.isRunning == TimerContract.TimerState.Running) SkyBlue else Color.LightGray,
                 strokeWidth = 16.dp,
                 trackColor = LightSkyBlue,
                 strokeCap = StrokeCap.Round,
@@ -199,9 +205,9 @@ private fun DrawTimer(
                     Text(
                         text = stringResource(
                             R.string.result_time,
-                            if (resultTime.get(Calendar.AM_PM) == Calendar.AM) "오전" else "오후",
-                            resultTime.get(Calendar.HOUR),
-                            resultTime.get(Calendar.MINUTE)
+                            if (resultTime.hour == Calendar.AM) "오전" else "오후",
+                            if (resultTime.hour == Calendar.AM) resultTime.hour else resultTime.hour - 12,
+                            resultTime.minute
                         ), fontSize = 16.sp
                     )
                 }
@@ -225,7 +231,7 @@ private fun DrawTimer(
 
                 Spacer(modifier = Modifier.size(8.dp))
 
-                if (uiState.isRunning) {
+                if (uiState.isRunning == TimerContract.TimerState.Running) {
                     Button(
                         onClick = { onTimerPause() },
                         modifier = Modifier
