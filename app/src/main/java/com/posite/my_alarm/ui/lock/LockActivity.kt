@@ -3,7 +3,6 @@ package com.posite.my_alarm.ui.lock
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.icu.text.SimpleDateFormat
@@ -13,7 +12,6 @@ import android.os.CombinedVibration
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -42,11 +40,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.posite.my_alarm.AlarmApplication
 import com.posite.my_alarm.R
 import com.posite.my_alarm.data.entity.AlarmStateEntity
-import com.posite.my_alarm.ui.alarm.getNextDate
 import com.posite.my_alarm.ui.lock.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.main.MainActivity.Companion.DAY_OF_WEEKS
 import com.posite.my_alarm.ui.main.MainActivity.Companion.VERSION_CODE
+import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.slide.CircleUnlock
 import com.posite.my_alarm.ui.slide.SwipeUnlockButton
 import com.posite.my_alarm.util.AlarmReceiver
@@ -58,17 +58,27 @@ import com.posite.my_alarm.util.AlarmSoundPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @AndroidEntryPoint
 class LockActivity : ComponentActivity() {
     private val viewModel by viewModels<LockViewModel>()
     private val vibrator by lazy {
-        getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
     }
     private lateinit var isAlarmValid: MutableState<Boolean>
+    private var date: DayOfWeek? = null
 
     @Inject
     lateinit var alarmManager: AlarmManager
@@ -85,9 +95,15 @@ class LockActivity : ComponentActivity() {
         val meridiem = intent.getStringExtra(ALARM_MERIDIEM) ?: getString(R.string.am)
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
+        val ordinals = intent.getIntExtra(DAY_OF_WEEKS, -1)
+        if (ordinals == -1) finish()
+        date = DayOfWeek.entries[ordinals]
         onEffect()
         enableEdgeToEdge()
-        Log.d("LockActivity", "onCreate: id=$id, hour=$hour, minute=$minute, meridiem=$meridiem")
+        Log.d(
+            "LockActivity",
+            "onCreate: id=$id, hour=$hour, minute=$minute, meridiem=$meridiem date=$date"
+        )
         setContent {
             BackHandler { }
             isAlarmValid = remember { mutableStateOf(false) }
@@ -97,7 +113,7 @@ class LockActivity : ComponentActivity() {
                     id = id,
                     hour = hour,
                     minute = minute,
-                    meridiem = meridiem
+                    meridiem = meridiem,
                 )
             }
         }
@@ -108,7 +124,7 @@ class LockActivity : ComponentActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.effect.collect {
                     when (it) {
-                        is LockContract.LockEffect.ISAlarmExist -> {
+                        is LockContract.LockEffect.IsAlarmExist -> {
                             val alarmState = it.alarm
                             if (checkValidAlarm(
                                     alarmState.id,
@@ -120,15 +136,11 @@ class LockActivity : ComponentActivity() {
                             ) {
                                 isAlarmValid.value = true
                             } else {
-                                Toast.makeText(this@LockActivity, "잘못된 알람입니다", Toast.LENGTH_SHORT)
-                                    .show()
                                 finish()
                             }
                         }
 
                         else -> {
-                            Toast.makeText(this@LockActivity, "알람이 존재하지 않습니다.", Toast.LENGTH_SHORT)
-                                .show()
                             finish()
                         }
                     }
@@ -147,7 +159,8 @@ class LockActivity : ComponentActivity() {
             hour == alarm.hour &&
             minute == alarm.minute &&
             meridiem == alarm.meridiem &&
-            alarm.isActive
+            alarm.isActive &&
+            alarm.dayOfWeeks.contains(date)
 
 
     @Composable
@@ -217,7 +230,8 @@ class LockActivity : ComponentActivity() {
                     }*/
                 CircleUnlock {
                     vibrator.cancel()
-                    val calendar = getNextDate(AlarmStateEntity(id, hour, minute, meridiem, true))
+                    val calendar =
+                        getNextWeekDate(AlarmStateEntity(id, hour, minute, meridiem, true))
                     alarmSoundPlayer.stop()
                     updateAlarm(calendar, id.toInt(), meridiem, hour, minute)
                 }
@@ -231,7 +245,7 @@ class LockActivity : ComponentActivity() {
         id: Int,
         meridiem: String,
         hour: Int,
-        minute: Int
+        minute: Int,
     ) {
         alarmManager.cancel(
             Intent(this@LockActivity, AlarmReceiver::class.java).putExtra(ALARM_ID, id)
@@ -241,7 +255,7 @@ class LockActivity : ComponentActivity() {
                 .putExtra(ALARM_MINUTE, minute).putExtra(
                     VERSION_CODE,
                     packageManager.getPackageInfo(packageName, 0).longVersionCode
-                ).let { intent ->
+                ).putExtra(DAY_OF_WEEKS, date!!.ordinal).let { intent ->
                     PendingIntent.getBroadcast(
                         this@LockActivity,
                         id,
@@ -259,7 +273,7 @@ class LockActivity : ComponentActivity() {
                 .putExtra(ALARM_MINUTE, minute).putExtra(
                     VERSION_CODE,
                     packageManager.getPackageInfo(packageName, 0).longVersionCode
-                ).let { intent ->
+                ).putExtra(DAY_OF_WEEKS, date!!.ordinal).let { intent ->
                     PendingIntent.getBroadcast(
                         this@LockActivity,
                         id,
@@ -271,33 +285,27 @@ class LockActivity : ComponentActivity() {
         finish()
     }
 
-//    fun getNextDate(alarm: AlarmStateEntity): Calendar {
-//        val current = System.currentTimeMillis()
-//        val calendar: Calendar = Calendar.getInstance().apply {
-//            timeInMillis = current
-//            if (alarm.meridiem == AlarmApplication.Companion.getString(R.string.pm)) {
-//                if (alarm.hour == 12) {
-//                    set(Calendar.HOUR_OF_DAY, alarm.hour)
-//                } else {
-//                    set(Calendar.HOUR_OF_DAY, alarm.hour + 12)
-//                }
-//            } else {
-//                if (alarm.hour == 12) {
-//                    set(Calendar.HOUR_OF_DAY, 0)
-//                } else {
-//                    set(Calendar.HOUR_OF_DAY, alarm.hour)
-//                }
-//            }
-//            set(Calendar.MINUTE, alarm.minute)
-//            set(Calendar.SECOND, 0)
-//        }
-//        if (current >= calendar.timeInMillis) {
-//            calendar.add(Calendar.DATE, 1)
-//        }
-//        Log.d("TimeMillis", "current: $current, calendar: ${calendar.timeInMillis}")
-//        Log.d("calendar", "getNextDate: ${calendar.time}")
-//        return calendar
-//    }
+    @OptIn(ExperimentalTime::class)
+    fun getNextWeekDate(alarm: AlarmStateEntity): Calendar {
+        val now = Clock.System.now()
+        val timeZone = TimeZone.currentSystemDefault()
+        val currentDateTime = now.toLocalDateTime(timeZone)
+
+        val hour24 = if (alarm.meridiem == AlarmApplication.Companion.getString(R.string.pm)) {
+            if (alarm.hour == 12) alarm.hour else alarm.hour + 12
+        } else {
+            if (alarm.hour == 12) 0 else alarm.hour
+        }
+
+        val alarmTime = LocalTime(hour24, alarm.minute, 0)
+        var alarmDateTime = currentDateTime.date.atTime(alarmTime)
+        alarmDateTime = alarmDateTime.date.plus(7, DateTimeUnit.DAY).atTime(alarmTime)
+
+        return Calendar.getInstance().apply {
+            val instant = alarmDateTime.toInstant(timeZone)
+            timeInMillis = instant.epochSeconds * 1000 + instant.nanosecondsOfSecond / 1_000_000
+        }
+    }
 
     companion object {
         private const val DATE_FORMAT = "yyyy년 MM월 dd일"

@@ -16,6 +16,6 @@ class LockContract {
 
     sealed class LockEffect : UiEffect {
         data object ISAlarmNotExist : LockEffect()
-        data class ISAlarmExist(val alarm: AlarmStateEntity) : LockEffect()
+        data class IsAlarmExist(val alarm: AlarmStateEntity) : LockEffect()
     }
 }

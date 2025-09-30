@@ -26,7 +26,7 @@ class LockViewModel @Inject constructor(private val repository: TimeRepository) 
                             setEffect { LockContract.LockEffect.ISAlarmNotExist }
                         } else {
                             setState { copy(alarm = result) }
-                            setEffect { LockContract.LockEffect.ISAlarmExist(result) }
+                            setEffect { LockContract.LockEffect.IsAlarmExist(result) }
                         }
                     }
                 }

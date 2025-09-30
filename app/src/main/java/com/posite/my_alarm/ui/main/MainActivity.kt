@@ -31,7 +31,7 @@ import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.model.PickerState
 import com.posite.my_alarm.ui.alarm.AlarmContract
 import com.posite.my_alarm.ui.alarm.AlarmViewModel
-import com.posite.my_alarm.ui.alarm.getNextDate
+import com.posite.my_alarm.ui.alarm.getNextOccurrences
 import com.posite.my_alarm.ui.nav.AppNavigation
 import com.posite.my_alarm.ui.nav.BottomNavigationBar
 import com.posite.my_alarm.ui.picker.DayOfWeek
@@ -55,7 +55,6 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     private val alarmVM by viewModels<AlarmViewModel>()
     private val timerVM by viewModels<TimerViewModel>()
-    private var added: Intent? = null
     private lateinit var navController: NavHostController
 
     @Inject
@@ -98,31 +97,19 @@ class MainActivity : ComponentActivity() {
                         selectedDayOfWeek,
                         onSwitchChanges = { isActive, alarm ->
                             if (isActive) {
-                                addAlarm(
-                                    alarm.id.toInt(),
-                                    alarm.meridiem,
-                                    alarm.hour,
-                                    alarm.minute.toString(),
-                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            this@MainActivity,
-                                            alarm.id.toInt(),
-                                            intent,
-                                            PendingIntent.FLAG_IMMUTABLE
-                                        )
-                                    }
-                                )
+                                addAlarm(alarm)
+                                Toast.makeText(
+                                    this,
+                                    format(
+                                        getString(R.string.add_alarm_toast),
+                                        meridiemState.selectedItem,
+                                        hourState.selectedItem,
+                                        minuteState.selectedItem.toInt()
+                                    ),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
-                                removeAlarm(
-                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            this@MainActivity,
-                                            alarm.id.toInt(),
-                                            intent,
-                                            PendingIntent.FLAG_IMMUTABLE
-                                        )
-                                    }, alarm
-                                )
+                                removeAlarm(alarm)
                             }
                             alarmVM.updateAlarmState(alarm.copy(isActive = isActive))
                             Log.d(
@@ -131,42 +118,35 @@ class MainActivity : ComponentActivity() {
                             )
                         },
                         deleteAlarm = { alarm ->
-                            //if(selectedDayOfWeek.isNotEmpty()) {}
-                            removeAlarm(createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                PendingIntent.getBroadcast(
-                                    this@MainActivity,
-                                    alarm.id.toInt(),
-                                    intent,
-                                    PendingIntent.FLAG_IMMUTABLE
-                                )
-                            }, alarm, DELETE_ALARM)
+                            removeAlarm(alarm, DELETE_ALARM)
                             alarmVM.deleteAlarmState(alarm)
                         },
                         updateAlarm = { alarm ->
                             //if(selectedDayOfWeek.isNotEmpty()) {}
                             if (alarm.isActive) {
                                 updateAlarm(
-                                    alarm.id.toInt(),
-                                    meridiemState.selectedItem,
-                                    hourState.selectedItem,
-                                    minuteState.selectedItem,
-                                    createAlarmIntent(this@MainActivity, alarm).let { intent ->
-                                        PendingIntent.getBroadcast(
-                                            this@MainActivity,
-                                            alarm.id.toInt(),
-                                            intent,
-                                            PendingIntent.FLAG_IMMUTABLE
-                                        )
-                                    }
+                                    alarm
                                 )
                             }
+
+                            Toast.makeText(
+                                this,
+                                format(
+                                    getString(R.string.update_alarm_toast),
+                                    meridiemState.selectedItem,
+                                    hourState.selectedItem,
+                                    minuteState.selectedItem.toInt()
+                                ),
+                                Toast.LENGTH_SHORT
+                            ).show()
                             alarmVM.updateAlarmState(
                                 AlarmStateEntity(
                                     id = alarm.id,
                                     hour = hourState.selectedItem,
                                     minute = minuteState.selectedItem.toInt(),
                                     meridiem = meridiemState.selectedItem,
-                                    isActive = alarm.isActive
+                                    isActive = alarm.isActive,
+                                    dayOfWeeks = selectedDayOfWeek.toMutableList()
                                 )
                             )
                             selectedDayOfWeek.clear()
@@ -178,7 +158,8 @@ class MainActivity : ComponentActivity() {
                                     hour = if (meridiemState.selectedItem == this.getString(R.string.am) && hourState.selectedItem == 12) 0 else hourState.selectedItem,
                                     minute = minuteState.selectedItem.toInt(),
                                     meridiem = meridiemState.selectedItem,
-                                    isActive = true
+                                    isActive = true,
+                                    dayOfWeeks = selectedDayOfWeek.toMutableList()
                                 )
                             )
                             selectedDayOfWeek.clear()
@@ -238,28 +219,22 @@ class MainActivity : ComponentActivity() {
                     when (it) {
                         is AlarmContract.AlarmEffect.ItemInserted -> {
                             delay(1000)
-                            added = createAlarmIntent(
-                                this@MainActivity,
-                                it.alarm
-                            )
+
                             Log.d("added", alarmVM.currentState.alarmList.last().id.toString())
-                            val intent = createAlarmIntent(
+                            if (it.alarm.dayOfWeeks.isEmpty()) {
+                                it.alarm.dayOfWeeks.addAll(DayOfWeek.entries)
+                            }
+                            addAlarm(it.alarm)
+                            Toast.makeText(
                                 this@MainActivity,
-                                it.alarm.copy(id = alarmVM.currentState.alarmList.last().id)
-                            )
-                            val pendingIntent = PendingIntent.getBroadcast(
-                                this@MainActivity,
-                                alarmVM.currentState.alarmList.last().id.toInt(),
-                                intent,
-                                PendingIntent.FLAG_IMMUTABLE
-                            )
-                            addAlarm(
-                                alarmVM.currentState.alarmList.last().id.toInt(),
-                                it.alarm.meridiem,
-                                it.alarm.hour,
-                                it.alarm.minute.toString(),
-                                pendingIntent
-                            )
+                                format(
+                                    getString(R.string.add_alarm_toast),
+                                    it.alarm.meridiem,
+                                    it.alarm.hour,
+                                    it.alarm.minute
+                                ),
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
 
                         is AlarmContract.AlarmEffect.NavigateToScreen -> {
@@ -273,7 +248,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createAlarmIntent(context: Context, it: AlarmStateEntity): Intent =
+    private fun createAlarmIntent(context: Context, it: AlarmStateEntity, date: DayOfWeek): Intent =
         Intent(context, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
             .putExtra(ALARM_MERIDIEM, it.meridiem)
             .putExtra(ALARM_HOUR, it.hour)
@@ -282,66 +257,59 @@ class MainActivity : ComponentActivity() {
                 VERSION_CODE,
                 packageManager.getPackageInfo(packageName, 0).longVersionCode
             )
+            .putExtra(DAY_OF_WEEKS, date.ordinal)
 
     @SuppressLint("ScheduleExactAlarm")
-    private fun addAlarm(
-        id: Int,
-        meridiemState: String,
-        hourState: Int,
-        minuteState: String,
-        intent: PendingIntent,
-        isUpdated: Boolean = NOT_UPDATE
-    ) {
+    private fun addAlarm(alarm: AlarmStateEntity) {
         //Log.d("intent", intent.hashCode().toString())
         //Log.d("add", "id: $id")
-        val alarmMills = getNextDate(
-            AlarmStateEntity(
-                hour = hourState,
-                minute = minuteState.toInt(),
-                meridiem = meridiemState,
-                isActive = true,
-            )
-        ).timeInMillis
-
-        Log.d("MainActivity", "now: ${System.currentTimeMillis()} alarm: $alarmMills")
-        Log.d("add", "addAlarm: $meridiemState $hourState $minuteState")
-        if (isUpdated) {
-            Toast.makeText(
-                this,
-                format(
-                    getString(R.string.update_alarm_toast),
-                    meridiemState,
-                    hourState,
-                    minuteState.toInt()
-                ),
-                Toast.LENGTH_SHORT
-            ).show()
-        } else {
-            Toast.makeText(
-                this,
-                format(
-                    getString(R.string.add_alarm_toast),
-                    meridiemState,
-                    hourState,
-                    minuteState.toInt()
-                ),
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            alarmMills, intent
+        val baseCalendar = getNextOccurrences(
+            alarm.hour,
+            alarm.minute,
+            alarm.dayOfWeeks
         )
+        for (date in alarm.dayOfWeeks) {
+            val pendingIntent = createAlarmIntent(
+                this@MainActivity,
+                alarm,
+                date
+            ).let { intent ->
+                PendingIntent.getBroadcast(
+                    this@MainActivity,
+                    alarm.id.toInt(),
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            }
+            val alarmMills = baseCalendar[date]!!
+
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                alarmMills, pendingIntent
+            )
+        }
     }
 
     private fun removeAlarm(
-        intent: PendingIntent,
         alarm: AlarmStateEntity,
         isDeleted: Boolean = CANCEL_ALARM
     ) {
         Log.d("remove", "removeAlarm: ${alarm.id} ${alarm.hour} ${alarm.minute} ${alarm.meridiem}")
-        alarmManager.cancel(intent)
+        for (date in alarm.dayOfWeeks) {
+            val pendingIntent = createAlarmIntent(
+                this@MainActivity,
+                alarm,
+                date
+            ).let { intent ->
+                PendingIntent.getBroadcast(
+                    this@MainActivity,
+                    alarm.id.toInt(),
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            }
+            alarmManager.cancel(pendingIntent)
+        }
         Log.d("remove", "id: ${alarm.id}")
         Log.d("intent", intent.hashCode().toString())
         if (isDeleted) {
@@ -370,29 +338,9 @@ class MainActivity : ComponentActivity() {
         //Log.d("compare", added!!.filterEquals(removed).toString())
     }
 
-    private fun removeAlarm(
-        id: Int,
-        intent: PendingIntent,
-        meridiem: String,
-        hour: Int,
-        minute: String
-    ) {
-        Log.d("remove", "removeAlarm: $meridiem $hour $minute")
-        Log.d("intent", intent.hashCode().toString())
-        Log.d("remove", "id: $id")
-        //Log.d("compare", added!!.filterEquals(removed).toString())
-        alarmManager.cancel(intent)
-    }
-
-    private fun updateAlarm(
-        id: Int,
-        meridiemState: String,
-        hourState: Int,
-        minuteState: String,
-        intent: PendingIntent
-    ) {
-        removeAlarm(id, intent, meridiemState, hourState, minuteState)
-        addAlarm(id, meridiemState, hourState, minuteState, intent, UPDATE_ALARM)
+    private fun updateAlarm(alarm: AlarmStateEntity) {
+        removeAlarm(alarm)
+        addAlarm(alarm)
     }
 
     override fun onRequestPermissionsResult(
@@ -433,5 +381,6 @@ class MainActivity : ComponentActivity() {
         private const val NOT_UPDATE = false
         private const val DELETE_ALARM = true
         private const val CANCEL_ALARM = false
+        const val DAY_OF_WEEKS = "DAYS"
     }
 }

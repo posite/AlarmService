@@ -61,16 +61,11 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import java.time.LocalDateTime
-import kotlin.time.Clock
+import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import kotlin.time.ExperimentalTime
+import java.time.DayOfWeek as JavaDayOfWeek
 
 @Composable
 fun AlarmScreen(
@@ -90,7 +85,9 @@ fun AlarmScreen(
     Log.d("MainActivity", states.minTime.toString())
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
-
+    //LocalConfiguration.current.orientation
+    //LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE //가로
+    //LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT //세로
     val scrollState = rememberScrollState()
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -464,36 +461,73 @@ fun AlarmListTitle(
 }
 
 @OptIn(ExperimentalTime::class)
-fun getNextDate(alarm: AlarmStateEntity): Calendar {
-    val now = Clock.System.now()
-    val timeZone = TimeZone.currentSystemDefault()
-
-    // 현재 시간을 LocalDateTime으로 변환
-    val currentDateTime = now.toLocalDateTime(timeZone)
-
-    // 24시간 형식 변환 (기존 로직과 동일)
-    val hour24 = if (alarm.meridiem == getString(R.string.pm)) {
-        if (alarm.hour == 12) alarm.hour else alarm.hour + 12
-    } else {
-        if (alarm.hour == 12) 0 else alarm.hour
-    }
-
-    // 오늘의 알람 시간 생성
-    val alarmTime = LocalTime(hour24, alarm.minute, 0)
-    var alarmDateTime = currentDateTime.date.atTime(alarmTime)
-
-    // 현재 시간과 비교하여 다음 실행 시간 결정
-    if (now.epochSeconds * 1000 + now.nanosecondsOfSecond / 1_000_000 >=
-        alarmDateTime.toInstant(timeZone).epochSeconds * 1000 +
-        alarmDateTime.toInstant(timeZone).nanosecondsOfSecond / 1_000_000
-    ) {
-        alarmDateTime = alarmDateTime.date.plus(1, DateTimeUnit.DAY).atTime(alarmTime)
-    }
-
-    // Calendar로 변환 반환
+fun getNextDate(alarms: List<AlarmStateEntity>): Calendar {
+    val min = alarms.filter { it.isActive }
+        .minByOrNull { getNextOccurrences(it.hour, it.minute, it.dayOfWeeks).values.min() }!!
     return Calendar.getInstance().apply {
-        val instant = alarmDateTime.toInstant(timeZone)
-        timeInMillis = instant.epochSeconds * 1000 + instant.nanosecondsOfSecond / 1_000_000
+        timeInMillis = getNextOccurrences(min.hour, min.minute, min.dayOfWeeks).values.min()
+    }
+}
+
+fun getNextOccurrences(
+    hour: Int,
+    minute: Int,
+    daysOfWeek: List<DayOfWeek>
+): Map<DayOfWeek, Long> {
+    val results = mutableMapOf<DayOfWeek, Long>()
+    if (daysOfWeek.isEmpty()) {
+        DayOfWeek.entries.forEach { dayOfWeek ->
+            val timeMillis = getNextOccurrence(hour, minute, dayOfWeek)
+            results[dayOfWeek] = timeMillis
+        }
+    } else {
+        for (dayOfWeek in daysOfWeek) {
+            val timeMillis = getNextOccurrence(hour, minute, dayOfWeek)
+            results[dayOfWeek] = timeMillis
+        }
+    }
+
+
+    return results
+}
+
+fun getNextOccurrence(
+    hour: Int,
+    minute: Int,
+    dayOfWeek: DayOfWeek
+): Long {
+    val now = LocalDateTime.now()
+    val javaDayOfWeek = dayOfWeek.toJavaDayOfWeek()
+
+    var targetDateTime = now
+        .withHour(hour)
+        .withMinute(minute)
+        .withSecond(0)
+        .withNano(0)
+
+    if (now.dayOfWeek == javaDayOfWeek) {
+        if (targetDateTime.isBefore(now) || targetDateTime.isEqual(now)) {
+            targetDateTime = targetDateTime.plusWeeks(1)
+        }
+    } else {
+        targetDateTime = targetDateTime.with(TemporalAdjusters.next(javaDayOfWeek))
+    }
+
+    return targetDateTime
+        .atZone(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli()
+}
+
+private fun DayOfWeek.toJavaDayOfWeek(): JavaDayOfWeek {
+    return when (this) {
+        DayOfWeek.SUNDAY -> JavaDayOfWeek.SUNDAY
+        DayOfWeek.MONDAY -> JavaDayOfWeek.MONDAY
+        DayOfWeek.TUESDAY -> JavaDayOfWeek.TUESDAY
+        DayOfWeek.WEDNESDAY -> JavaDayOfWeek.WEDNESDAY
+        DayOfWeek.THURSDAY -> JavaDayOfWeek.THURSDAY
+        DayOfWeek.FRIDAY -> JavaDayOfWeek.FRIDAY
+        DayOfWeek.SATURDAY -> JavaDayOfWeek.SATURDAY
     }
 }
 
@@ -501,9 +535,8 @@ fun calculateRemainTime(alarms: List<AlarmStateEntity>): RemainTime? {
     //Log.d("MainActivity", "alarms: $alarms")
     while (alarms.isNotEmpty()) {
         val remainTime = checkTimeChange(alarms.filter { it.isActive }
-            .minByOrNull { getNextDate(it).timeInMillis }!!)
-        val date = getNextDate(alarms.filter { it.isActive }
-            .minByOrNull { getNextDate(it).timeInMillis }!!)
+            .minByOrNull { getNextOccurrences(it.hour, it.minute, it.dayOfWeeks).values.min() }!!)
+        val date = getNextDate(alarms)
 
         return RemainTime(
             date.get(Calendar.MONTH) + 1,
@@ -515,9 +548,7 @@ fun calculateRemainTime(alarms: List<AlarmStateEntity>): RemainTime? {
                 date.get(Calendar.DAY_OF_WEEK)
             ),
             date.get(Calendar.MINUTE),
-            if (date.get(Calendar.HOUR_OF_DAY) == 0) 12 else date.get(
-                Calendar.HOUR
-            ),
+            date.get(Calendar.HOUR),
             remainTime.first,
             remainTime.second
         )

@@ -1,5 +1,6 @@
 package com.posite.my_alarm.ui.alarm
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.repository.TimeRepository
@@ -24,6 +25,7 @@ class AlarmViewModel @Inject constructor(private val repository: TimeRepository)
             is AlarmContract.AlarmEvent.GetAlarmList -> {
                 viewModelScope.launch {
                     repository.getAlarmStates().collect { alarms ->
+                        Log.d("AlarmViewModel", "Alarms: $alarms")
                         setState { copy(alarmList = alarms) }
                         setState { copy(minTime = calculateRemainTime(alarms)) }
                     }

@@ -1,5 +1,6 @@
 package com.posite.my_alarm.ui.picker
 
+import android.os.Parcelable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.posite.my_alarm.ui.theme.SkyBlue
+import kotlinx.parcelize.Parcelize
 
 @Composable
 fun DayOfWeekScreen(selectedDayOfWeek: MutableSet<DayOfWeek>) {
@@ -88,36 +90,13 @@ fun DayOfWeekScreen(selectedDayOfWeek: MutableSet<DayOfWeek>) {
                     }
 
                 }
-//                Button(
-//                    modifier = Modifier.size(40.dp),
-//                    shape = CircleShape,
-//                    colors = ButtonDefaults.buttonColors(
-//                        containerColor = Color.Transparent,
-//                    ),
-//                    onClick = {
-//                        if (isSelected.value) {
-//                            selectedDayOfWeek.remove(dayOfWeek)
-//                            isSelected.value = false
-//                        } else {
-//                            selectedDayOfWeek.add(dayOfWeek)
-//                            isSelected.value = true
-//                        }
-//                    },
-//                    contentPadding = PaddingValues(0.dp),
-//                    border = if (isSelected.value) ButtonDefaults.outlinedButtonBorder else null
-//                ) {
-//                    Text(
-//                        text = dayOfWeek.label,
-//                        fontSize = 16.sp,
-//                        color = if (isSelected.value) SkyBlue else Color.Black
-//                    )
-//                }
             }
         }
     }
 }
 
-enum class DayOfWeek(val value: Int, val label: String) {
+@Parcelize
+enum class DayOfWeek(val value: Int, val label: String) : Parcelable {
     SUNDAY(0, "일"),
     MONDAY(1, "월"),
     TUESDAY(2, "화"),
