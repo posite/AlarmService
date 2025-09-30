@@ -21,6 +21,11 @@ android {
         versionName = "1.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments.put("room.schemaLocation", "$projectDir/schemas".toString())
+            }
+        }
     }
 
     buildTypes {
@@ -93,4 +98,7 @@ dependencies {
 
     //kotlin-datetime
     implementation(libs.kotlin.datetime)
+
+    //gson
+    implementation(libs.gson)
 }

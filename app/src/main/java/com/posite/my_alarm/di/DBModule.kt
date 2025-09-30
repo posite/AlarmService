@@ -22,7 +22,7 @@ object DBModule {
         context,
         AlarmStateDB::class.java,
         "alarm_db"
-    ).fallbackToDestructiveMigration()
+    ).fallbackToDestructiveMigration(true)
         .build()
 
     @Singleton
