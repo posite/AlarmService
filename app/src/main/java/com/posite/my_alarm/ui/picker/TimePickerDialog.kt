@@ -43,13 +43,15 @@ fun TimePickerDialog(
         properties = properties
     ) {
         Surface(
-            modifier = modifier.clip(
-                shape = RoundedCornerShape(10.dp)
-            )
+            modifier = modifier
+                .padding(24.dp, 0.dp)
+                .clip(shape = RoundedCornerShape(10.dp))
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(modifier = Modifier.padding(24.dp, 0.dp)) {
+                Row {
                     TimePicker(
                         meridiemState,
                         hourState,
@@ -63,8 +65,7 @@ fun TimePickerDialog(
                 DayOfWeekScreen(selectedDayOfWeek)
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End,
                 ) {

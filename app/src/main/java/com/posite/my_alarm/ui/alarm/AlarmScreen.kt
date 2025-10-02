@@ -1,5 +1,6 @@
 package com.posite.my_alarm.ui.alarm
 
+import android.content.res.Configuration
 import android.icu.util.Calendar
 import android.util.Log
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -85,7 +87,6 @@ fun AlarmScreen(
     Log.d("MainActivity", states.minTime.toString())
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
-    //LocalConfiguration.current.orientation
     //LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE //가로
     //LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT //세로
     val scrollState = rememberScrollState()
@@ -116,8 +117,11 @@ fun AlarmScreen(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(60.dp))
-        MinRemainAlarm(scrollState.value, states.minTime, states, calculateMinTime)
+        if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            Spacer(modifier = Modifier.height(60.dp))
+            MinRemainAlarm(scrollState.value, states.minTime, states, calculateMinTime)
+
+        }
         Spacer(modifier = Modifier.height(24.dp))
         AlarmList(
             states.alarmList,
@@ -143,7 +147,7 @@ fun AlarmScreen(
                 hour = isAlarmClick.value!!.hour,
                 minute = isAlarmClick.value!!.minute,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(LocalConfiguration.current.screenWidthDp.dp - if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 0.dp else 120.dp)
                     .background(color = Color.Transparent)
                     .padding(12.dp, 20.dp),
                 properties = DialogProperties(
@@ -168,7 +172,7 @@ fun AlarmScreen(
             minuteState.selectedItem = DEFAULT_MINUTE
             TimePickerDialog(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(LocalConfiguration.current.screenWidthDp.dp - if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 0.dp else 120.dp)
                     .background(color = Color.Transparent)
                     .padding(12.dp, 20.dp),
                 properties = DialogProperties(

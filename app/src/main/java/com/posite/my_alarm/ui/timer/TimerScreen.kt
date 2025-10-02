@@ -1,6 +1,6 @@
 package com.posite.my_alarm.ui.timer
 
-import android.icu.util.Calendar
+import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,7 +59,7 @@ fun TimerScreen(
     Log.d("TimerScreen", "uiState: ${uiState.isRunning}")
     LaunchedEffect(uiState.remainTime, uiState.isRunning) {
         //Log.d("LaunchedEffect", "uiState: ${uiState.isRunning}")
-        delay(980)
+        delay(910)
         if (uiState.isRunning == TimerContract.TimerState.Running) {
             onTimerTikTok()
         }
@@ -86,10 +87,15 @@ private fun SettingTimeScreen(onTimerSet: (Int) -> Unit) {
 
     Column(
         modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceAround
+        verticalArrangement = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) Arrangement.SpaceAround else Arrangement.Top
     ) {
+        if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) Spacer(
+            modifier = Modifier.size(60.dp)
+        )
         CountDownTimerPicker(hourState, minuteState, secondState)
-
+        if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE) Spacer(
+            modifier = Modifier.size(24.dp)
+        )
         Button(
             onClick = { onTimerSet(hourState.selectedItem.toInt() * 3600 + minuteState.selectedItem.toInt() * 60 + secondState.selectedItem.toInt()) },
             modifier = Modifier
@@ -165,31 +171,37 @@ private fun DrawTimer(
         }
 
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(0.dp, 0.dp, 0.dp, 0.dp),
-        verticalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) Arrangement.SpaceAround else Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier.size(400.dp),
+            modifier = Modifier.size(if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 400.dp else 150.dp),
             contentAlignment = Alignment.Center
         ) {
 
-            CircularProgressIndicator(
-                progress = { progress.value },
-                modifier = Modifier.size(350.dp),
-                color = if (uiState.isRunning == TimerContract.TimerState.Running) SkyBlue else Color.LightGray,
-                strokeWidth = 16.dp,
-                trackColor = LightSkyBlue,
-                strokeCap = StrokeCap.Round,
-            )
+            if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                CircularProgressIndicator(
+                    progress = { progress.value },
+                    modifier = Modifier.size(350.dp),
+                    color = if (uiState.isRunning == TimerContract.TimerState.Running) SkyBlue else Color.LightGray,
+                    strokeWidth = 16.dp,
+                    trackColor = LightSkyBlue,
+                    strokeCap = StrokeCap.Round,
+                )
+            }
 
             Column(
                 modifier = Modifier
-                    .size(300.dp)
-                    .padding(0.dp, 32.dp),
+                    .size(if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 300.dp else 150.dp)
+                    .padding(
+                        0.dp,
+                        if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) 32.dp else 0.dp
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceAround
             ) {
@@ -205,8 +217,8 @@ private fun DrawTimer(
                     Text(
                         text = stringResource(
                             R.string.result_time,
-                            if (resultTime.hour == Calendar.AM) "오전" else "오후",
-                            if (resultTime.hour == Calendar.AM) resultTime.hour else resultTime.hour - 12,
+                            if (resultTime.hour < 12) "오전" else "오후",
+                            if (resultTime.hour <= 12) resultTime.hour else resultTime.hour - 12,
                             resultTime.minute
                         ), fontSize = 16.sp
                     )

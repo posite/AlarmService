@@ -6,7 +6,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
@@ -66,7 +65,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         requestPermission(this, alarmManager)
         alarmVM.getAlarmList()
-        this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        //this.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
         onEffect()
         setContent {
             val meridiemState = remember { PickerState(DEFAULT_MERIDIEM) }
