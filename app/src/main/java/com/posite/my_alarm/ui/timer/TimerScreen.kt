@@ -40,7 +40,6 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_SECOND
 import com.posite.my_alarm.ui.picker.CountDownTimerPicker
 import com.posite.my_alarm.ui.theme.LightSkyBlue
 import com.posite.my_alarm.ui.theme.SkyBlue
-import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
@@ -51,19 +50,11 @@ import kotlin.time.ExperimentalTime
 fun TimerScreen(
     uiState: TimerContract.TimerUiState,
     onTimerSet: (Int) -> Unit,
-    onTimerTikTok: () -> Unit,
     onTimerDelete: () -> Unit,
     onTimerPause: () -> Unit,
     onTimerRestart: () -> Unit
 ) {
     Log.d("TimerScreen", "uiState: ${uiState.isRunning}")
-    LaunchedEffect(uiState.remainTime, uiState.isRunning) {
-        //Log.d("LaunchedEffect", "uiState: ${uiState.isRunning}")
-        delay(910)
-        if (uiState.isRunning == TimerContract.TimerState.Running) {
-            onTimerTikTok()
-        }
-    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +62,7 @@ fun TimerScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        if (uiState.remainTime > 0 && uiState.initialTime > 0) {
+        if (uiState.isRunning == TimerContract.TimerState.Running) {
             DrawTimer(uiState, onTimerDelete, onTimerPause, onTimerRestart)
         } else {
             SettingTimeScreen(onTimerSet)
@@ -118,7 +109,8 @@ private fun DrawTimer(
     onTimerPause: () -> Unit,
     onTimerRestart: () -> Unit
 ) {
-    val progress = remember { Animatable(uiState.remainTime / uiState.initialTime.toFloat()) }
+    val progress =
+        remember { Animatable(uiState.remainTime.toFloat() / uiState.initialTime.toFloat()) }
     val initialTime = if (uiState.initialTime / 3600 >= 1) {
         stringResource(
             R.string.initial_time_hour,
@@ -157,12 +149,13 @@ private fun DrawTimer(
     }
 
     LaunchedEffect(uiState.isRunning) {
-        Log.d("DrawTimer", "uiState: ${uiState.isRunning}")
+        Log.d("DrawTimer", "uiStates: ${uiState.isRunning}")
+        Log.d("DrawTimer", "remainTime: ${uiState.remainTime}")
         if (uiState.isRunning == TimerContract.TimerState.Running) {
             progress.animateTo(
                 targetValue = 0f,
                 animationSpec = tween(
-                    durationMillis = uiState.remainTime * 1000,
+                    durationMillis = uiState.remainTime * 1000 - 75,
                     easing = LinearEasing
                 )
             )
@@ -227,7 +220,7 @@ private fun DrawTimer(
             }
         }
 
-        if (uiState.remainTime >= 0) {
+        if (uiState.isRunning != TimerContract.TimerState.Finished && uiState.isRunning != TimerContract.TimerState.Initial) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly

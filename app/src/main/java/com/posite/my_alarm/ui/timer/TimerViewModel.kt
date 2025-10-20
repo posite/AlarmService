@@ -16,7 +16,7 @@ class TimerViewModel @Inject constructor() :
         when (event) {
             is TimerContract.TimerEvent.TikTok -> {
                 if (currentState.isRunning == TimerContract.TimerState.Running) {
-                    if (currentState.remainTime > 0) {
+                    if (currentState.remainTime > 1) {
                         setState { copy(remainTime = currentState.remainTime - 1) }
                     } else {
                         setState { copy(isRunning = TimerContract.TimerState.Finished) }
@@ -50,7 +50,7 @@ class TimerViewModel @Inject constructor() :
                     copy(
                         initialTime = 0,
                         remainTime = 0,
-                        isRunning = TimerContract.TimerState.Finished
+                        isRunning = TimerContract.TimerState.Initial
                     )
                 }
             }
