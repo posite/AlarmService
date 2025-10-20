@@ -35,16 +35,19 @@ import com.posite.my_alarm.ui.nav.AppNavigation
 import com.posite.my_alarm.ui.nav.BottomNavigationBar
 import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.theme.MyAlarmTheme
+import com.posite.my_alarm.ui.timer.TimerContract
 import com.posite.my_alarm.ui.timer.TimerViewModel
 import com.posite.my_alarm.util.AlarmReceiver
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_HOUR
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_ID
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MERIDIEM
 import com.posite.my_alarm.util.AlarmReceiver.Companion.ALARM_MINUTE
+import com.posite.my_alarm.util.launchPeriodicAsync
 import com.posite.my_alarm.util.permission.ExactAlarmPermission
 import com.posite.my_alarm.util.permission.NotificationPermission
 import com.posite.my_alarm.util.permission.OverlayPermission
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.String.format
@@ -58,6 +61,8 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var alarmManager: AlarmManager
+
+    private var tikTokJob: Job? = null
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -168,15 +173,23 @@ class MainActivity : ComponentActivity() {
                         },
                         onTimerSet = { time ->
                             timerVM.setTimer(time)
-                        },
-                        onTimerTikTok = {
-                            timerVM.tikTok()
+                            tikTokJob = lifecycleScope.launchPeriodicAsync(1000L) {
+                                timerVM.tikTok()
+                                if (timerVM.currentState.isRunning == TimerContract.TimerState.Finished) {
+                                    tikTokJob?.cancel()
+                                    tikTokJob = null
+                                }
+                            }
                         },
                         onTimerDelete = {
                             timerVM.deleteTimer()
+                            tikTokJob?.cancel()
+                            tikTokJob = null
                         },
                         onTimerPause = {
                             timerVM.pauseTimer()
+                            tikTokJob?.cancel()
+                            tikTokJob = null
                         },
                         onTimerRestart = {
                             timerVM.restartTimer()

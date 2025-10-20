@@ -31,7 +31,6 @@ fun AppNavigation(
     insertAlarm: () -> Unit,
     calculateMinTime: (RemainTime?) -> Unit,
     onTimerSet: (Int) -> Unit,
-    onTimerTikTok: () -> Unit,
     onTimerDelete: () -> Unit,
     onTimerPause: () -> Unit,
     onTimerRestart: () -> Unit
@@ -60,12 +59,11 @@ fun AppNavigation(
 
         composable(Screen.TimerScreen.route) {
             TimerScreen(
-                timerStates,
-                onTimerSet,
-                onTimerTikTok,
-                onTimerDelete,
-                onTimerPause,
-                onTimerRestart
+                uiState = timerStates,
+                onTimerSet = onTimerSet,
+                onTimerDelete = onTimerDelete,
+                onTimerPause = onTimerPause,
+                onTimerRestart = onTimerRestart
             )
         }
     }
