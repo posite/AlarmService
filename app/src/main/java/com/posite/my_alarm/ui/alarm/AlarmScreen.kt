@@ -206,12 +206,21 @@ fun MinRemainAlarm(
     calculateMinTime: (RemainTime?) -> Unit
 ) {
     LaunchedEffect(minTime) {
+        Log.d("MinRemainAlarm", "LaunchedEffect Start")
+        val startTime = System.currentTimeMillis()
+        var iteration = 0
+
         while (true) {
+            iteration++
+            val targetTime = startTime + (iteration * 1000L)
+            val currentTime = System.currentTimeMillis()
+            val delayTime = (targetTime - currentTime).coerceAtLeast(0)
+
+            delay(delayTime)
             if (states.alarmList.isNotEmpty()) {
                 calculateMinTime(calculateRemainTime(states.alarmList))
                 Log.d("MainActivity", "MinRemainAlarm: $minTime")
             }
-            delay(1000)
         }
     }
     val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
