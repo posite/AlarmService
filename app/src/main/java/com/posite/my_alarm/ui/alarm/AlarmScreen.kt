@@ -261,7 +261,8 @@ fun MinRemainAlarm(
     }
 }
 
-fun checkTimeChange(minTime: AlarmStateEntity): Pair<Int, Int> {
+fun checkTimeChange(minTime: AlarmStateEntity?): Pair<Int, Int>? {
+    if (minTime == null) return null
     val localDateTime = LocalDateTime.now()
     var hour = minTime.hour - localDateTime.hour
     if (minTime.meridiem == getString(R.string.pm) && minTime.hour != 12) {
@@ -544,11 +545,20 @@ private fun DayOfWeek.toJavaDayOfWeek(): JavaDayOfWeek {
     }
 }
 
-fun calculateRemainTime(alarms: List<AlarmStateEntity>): RemainTime? {
+fun calculateRemainTime(alarms: List<AlarmStateEntity>?): RemainTime? {
     //Log.d("MainActivity", "alarms: $alarms")
+    if (alarms == null) return null
     while (alarms.isNotEmpty()) {
-        val remainTime = checkTimeChange(alarms.filter { it.isActive }
-            .minByOrNull { getNextOccurrences(it.hour, it.minute, it.dayOfWeeks).values.min() }!!)
+        val target = alarms.filter { it.isActive }
+        if (target.isEmpty()) return null
+        val remainTime = checkTimeChange(target.minByOrNull {
+            getNextOccurrences(
+                it.hour,
+                it.minute,
+                it.dayOfWeeks
+            ).values.min()
+        }!!)
+        if (remainTime == null) return null
         val date = getNextDate(alarms)
 
         return RemainTime(
