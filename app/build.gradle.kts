@@ -11,14 +11,14 @@ plugins {
 
 android {
     namespace = "com.posite.my_alarm"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.posite.my_alarm"
         minSdk = 34
-        targetSdk = 35
-        versionCode = 11
-        versionName = "1.1.6"
+        targetSdk = 36
+        versionCode = 13
+        versionName = "1.2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
@@ -101,4 +101,7 @@ dependencies {
 
     //gson
     implementation(libs.gson)
+
+    //viewmodel
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 }
