@@ -63,8 +63,10 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import kotlin.time.ExperimentalTime
 import java.time.DayOfWeek as JavaDayOfWeek
@@ -212,14 +214,16 @@ fun MinRemainAlarm(
 
         while (true) {
             iteration++
-            val targetTime = startTime + (iteration * 1000L)
+            val targetTime = Instant.ofEpochMilli(startTime + (iteration * 1000L))
+                .truncatedTo(ChronoUnit.SECONDS)
+                .toEpochMilli()
             val currentTime = System.currentTimeMillis()
             val delayTime = (targetTime - currentTime).coerceAtLeast(0)
 
             delay(delayTime)
             if (states.alarmList.isNotEmpty()) {
                 calculateMinTime(calculateRemainTime(states.alarmList))
-                Log.d("MainActivity", "MinRemainAlarm: $minTime")
+                //Log.d("MainActivity", "MinRemainAlarm: $minTime")
             }
         }
     }
