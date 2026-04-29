@@ -96,6 +96,7 @@ class LockActivity : ComponentActivity() {
         val hour = intent.getIntExtra(ALARM_HOUR, 0)
         val minute = intent.getIntExtra(ALARM_MINUTE, 0)
         val ordinals = intent.getIntExtra(DAY_OF_WEEKS, -1)
+        Log.d("ordinals", ordinals.toString())
         if (ordinals == -1) finish()
         date = DayOfWeek.entries[ordinals]
         onEffect()
@@ -107,7 +108,7 @@ class LockActivity : ComponentActivity() {
         setContent {
             BackHandler { }
             isAlarmValid = remember { mutableStateOf(false) }
-            viewModel.getAlarmStateById(id)
+            viewModel.getAlarmStateById((id - ordinals) / 7)
             if (isAlarmValid.value) {
                 RingAlarm(
                     id = id,
@@ -125,19 +126,7 @@ class LockActivity : ComponentActivity() {
                 viewModel.effect.collect {
                     when (it) {
                         is LockContract.LockEffect.IsAlarmExist -> {
-                            val alarmState = it.alarm
-                            if (checkValidAlarm(
-                                    alarmState.id,
-                                    alarmState.hour,
-                                    alarmState.minute,
-                                    alarmState.meridiem,
-                                    alarmState
-                                )
-                            ) {
-                                isAlarmValid.value = true
-                            } else {
-                                finish()
-                            }
+                            isAlarmValid.value = true
                         }
 
                         else -> {
@@ -148,19 +137,6 @@ class LockActivity : ComponentActivity() {
             }
         }
     }
-
-    private fun checkValidAlarm(
-        id: Long,
-        hour: Int,
-        minute: Int,
-        meridiem: String,
-        alarm: AlarmStateEntity
-    ) = id == alarm.id &&
-            hour == alarm.hour &&
-            minute == alarm.minute &&
-            meridiem == alarm.meridiem &&
-            alarm.isActive &&
-            alarm.dayOfWeeks.contains(date)
 
 
     @Composable

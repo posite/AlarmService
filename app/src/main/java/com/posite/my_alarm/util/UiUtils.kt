@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,7 +23,7 @@ import androidx.compose.ui.unit.Dp
 
 fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier = composed {
     this.clickable(
-        indication = null,
+        indication = ripple(),
         interactionSource = remember { MutableInteractionSource() }) {
         onClick()
     }
@@ -50,7 +51,7 @@ fun Modifier.roundedRippleClickable(
         }
         .combinedClickable(
             interactionSource = interactionSource,
-            indication = null, // 기본 indication은 사용하지 않고 직접 그림
+            indication = ripple(),
             onLongClick = onLongClick,
             onClick = onClick
         )

@@ -1,6 +1,7 @@
 package com.posite.my_alarm.ui.alarm
 
 data class RemainTime(
+    val remainDay: Int = 0,
     val month: Int,
     val day: Int,
     val meridiem: String,

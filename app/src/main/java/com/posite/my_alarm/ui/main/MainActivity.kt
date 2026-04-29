@@ -48,10 +48,10 @@ import com.posite.my_alarm.util.permission.NotificationPermission
 import com.posite.my_alarm.util.permission.OverlayPermission
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.String.format
 import javax.inject.Inject
+import kotlin.math.pow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -106,9 +106,9 @@ class MainActivity : ComponentActivity() {
                                     this,
                                     format(
                                         getString(R.string.add_alarm_toast),
-                                        meridiemState.selectedItem,
-                                        hourState.selectedItem,
-                                        minuteState.selectedItem.toInt()
+                                        alarm.meridiem,
+                                        alarm.hour,
+                                        alarm.minute
                                     ),
                                     Toast.LENGTH_SHORT
                                 ).show()
@@ -230,13 +230,12 @@ class MainActivity : ComponentActivity() {
                 alarmVM.effect.collect {
                     when (it) {
                         is AlarmContract.AlarmEffect.ItemInserted -> {
-                            delay(1000)
-
-                            Log.d("added", alarmVM.currentState.alarmList.last().id.toString())
-                            if (it.alarm.dayOfWeeks.isEmpty()) {
-                                it.alarm.dayOfWeeks.addAll(DayOfWeek.entries)
+                            if (alarmVM.currentState.alarmList.last().dayOfWeeks.isEmpty()) {
+                                alarmVM.currentState.alarmList.last().dayOfWeeks.addAll(DayOfWeek.entries)
                             }
-                            addAlarm(it.alarm)
+                            //Log.d("added", it.alarm.toString())
+                            Log.d("added", alarmVM.currentState.alarmList.last().toString())
+                            addAlarm(alarmVM.currentState.alarmList.last())
                             Toast.makeText(
                                 this@MainActivity,
                                 format(
@@ -261,7 +260,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun createAlarmIntent(context: Context, it: AlarmStateEntity, date: DayOfWeek): Intent =
-        Intent(context, AlarmReceiver::class.java).putExtra(ALARM_ID, it.id)
+        Intent(context, AlarmReceiver::class.java).putExtra(
+            ALARM_ID,
+            it.id * 7 + date.ordinal
+        )
             .putExtra(ALARM_MERIDIEM, it.meridiem)
             .putExtra(ALARM_HOUR, it.hour)
             .putExtra(ALARM_MINUTE, it.minute)
@@ -278,9 +280,11 @@ class MainActivity : ComponentActivity() {
         val baseCalendar = getNextOccurrences(
             alarm.hour,
             alarm.minute,
+            alarm.meridiem,
             alarm.dayOfWeeks
         )
         for (date in alarm.dayOfWeeks) {
+            Log.d("id", (alarm.id*7 + date.ordinal).toString())
             val pendingIntent = createAlarmIntent(
                 this@MainActivity,
                 alarm,
@@ -288,7 +292,7 @@ class MainActivity : ComponentActivity() {
             ).let { intent ->
                 PendingIntent.getBroadcast(
                     this@MainActivity,
-                    alarm.id.toInt(),
+                    (alarm.id*7).toInt() + date.ordinal,
                     intent,
                     PendingIntent.FLAG_IMMUTABLE
                 )

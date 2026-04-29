@@ -63,11 +63,10 @@ import com.posite.my_alarm.ui.main.MainActivity.Companion.DEFAULT_MODE_STATE
 import com.posite.my_alarm.ui.picker.DayOfWeek
 import com.posite.my_alarm.ui.picker.TimePickerDialog
 import kotlinx.coroutines.delay
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import kotlin.math.abs
 import kotlin.time.ExperimentalTime
 import java.time.DayOfWeek as JavaDayOfWeek
 
@@ -89,8 +88,7 @@ fun AlarmScreen(
     Log.d("MainActivity", states.minTime.toString())
     val isShowTimePicker = remember { mutableStateOf(DEFAULT_MODE_STATE) }
     val set = mutableSetOf<AlarmStateEntity>()
-    //LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE //가로
-    //LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT //세로
+
     val scrollState = rememberScrollState()
     val nestedScrollConnection = remember {
         object : NestedScrollConnection {
@@ -122,7 +120,6 @@ fun AlarmScreen(
         if (LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT) {
             Spacer(modifier = Modifier.height(60.dp))
             MinRemainAlarm(scrollState.value, states.minTime, states, calculateMinTime)
-
         }
         Spacer(modifier = Modifier.height(24.dp))
         AlarmList(
@@ -207,31 +204,28 @@ fun MinRemainAlarm(
     states: AlarmContract.AlarmUiState,
     calculateMinTime: (RemainTime?) -> Unit
 ) {
-    LaunchedEffect(minTime) {
+    Log.d("MIN", states.alarmList.filter { it.isActive }.toString())
+    LaunchedEffect(states.alarmList.filter { it.isActive }) {
         Log.d("MinRemainAlarm", "LaunchedEffect Start")
-        val startTime = System.currentTimeMillis()
-        var iteration = 0
-
         while (true) {
-            iteration++
-            val targetTime = Instant.ofEpochMilli(startTime + (iteration * 1000L))
-                .truncatedTo(ChronoUnit.SECONDS)
-                .toEpochMilli()
-            val currentTime = System.currentTimeMillis()
-            val delayTime = (targetTime - currentTime).coerceAtLeast(0)
-
-            delay(delayTime)
-            if (states.alarmList.isNotEmpty()) {
-                calculateMinTime(calculateRemainTime(states.alarmList))
-                //Log.d("MainActivity", "MinRemainAlarm: $minTime")
+            if (states.alarmList.any { it.isActive }) {
+                calculateMinTime(calculateRemainTime(states.alarmList.filter { it.isActive }))
             }
+            delay(1000)
         }
     }
     val alpha = 1f - (scrollValue.toFloat() / 350f).coerceIn(0f, 1f)
-
-    if (minTime != null) {
+    Log.d("min", states.minTime.toString())
+    if (minTime != null && states.alarmList.any { it.isActive }) {
+        val remainDay = if (minTime.remainDay > 0) "${minTime.remainDay}일 " else ""
+        var remainHour = if (minTime.remainHour > 0) "${minTime.remainHour}시간 " else ""
+        var remainMinute = if (minTime.remainMinute > 0) "${minTime.remainMinute}분 " else ""
+        if (remainHour == "" && remainMinute == "") {
+            remainHour = "23시간 "
+            remainMinute = "59분 "
+        }
         Text(
-            text = "${minTime.remainHour}시간 ${minTime.remainMinute}분 후에",
+            text = "$remainDay$remainHour${remainMinute}후에",
             modifier = Modifier.padding(0.dp, 12.dp, 0.dp, 0.dp),
             fontSize = 32.sp,
             color = Color.Black.copy(alpha)
@@ -481,30 +475,39 @@ fun AlarmListTitle(
 @OptIn(ExperimentalTime::class)
 fun getNextDate(alarms: List<AlarmStateEntity>): Calendar {
     val min = alarms.filter { it.isActive }
-        .minByOrNull { getNextOccurrences(it.hour, it.minute, it.dayOfWeeks).values.min() }!!
+        .minByOrNull {
+            getNextOccurrences(
+                it.hour,
+                it.minute,
+                it.meridiem,
+                it.dayOfWeeks
+            ).values.min()
+        }!!
     return Calendar.getInstance().apply {
-        timeInMillis = getNextOccurrences(min.hour, min.minute, min.dayOfWeeks).values.min()
+        timeInMillis =
+            getNextOccurrences(min.hour, min.minute, min.meridiem, min.dayOfWeeks).values.min()
     }
 }
 
 fun getNextOccurrences(
     hour: Int,
     minute: Int,
+    meridiem: String,
     daysOfWeek: List<DayOfWeek>
 ): Map<DayOfWeek, Long> {
     val results = mutableMapOf<DayOfWeek, Long>()
     if (daysOfWeek.isEmpty()) {
         DayOfWeek.entries.forEach { dayOfWeek ->
-            val timeMillis = getNextOccurrence(hour, minute, dayOfWeek)
+            val timeMillis = getNextOccurrence(hour, minute, meridiem, dayOfWeek)
             results[dayOfWeek] = timeMillis
         }
     } else {
         for (dayOfWeek in daysOfWeek) {
-            val timeMillis = getNextOccurrence(hour, minute, dayOfWeek)
+            val timeMillis = getNextOccurrence(hour, minute, meridiem, dayOfWeek)
             results[dayOfWeek] = timeMillis
         }
     }
-
+    Log.d("results", results.toString())
 
     return results
 }
@@ -512,17 +515,18 @@ fun getNextOccurrences(
 fun getNextOccurrence(
     hour: Int,
     minute: Int,
+    meridiem: String,
     dayOfWeek: DayOfWeek
 ): Long {
     val now = LocalDateTime.now()
     val javaDayOfWeek = dayOfWeek.toJavaDayOfWeek()
-
     var targetDateTime = now
-        .withHour(hour)
+        .withHour(if (meridiem == "오후") hour + 12 else hour)
         .withMinute(minute)
         .withSecond(0)
         .withNano(0)
 
+    Log.d("day", "$targetDateTime $now")
     if (now.dayOfWeek == javaDayOfWeek) {
         if (targetDateTime.isBefore(now) || targetDateTime.isEqual(now)) {
             targetDateTime = targetDateTime.plusWeeks(1)
@@ -559,13 +563,18 @@ fun calculateRemainTime(alarms: List<AlarmStateEntity>?): RemainTime? {
             getNextOccurrences(
                 it.hour,
                 it.minute,
+                it.meridiem,
                 it.dayOfWeeks
             ).values.min()
         }!!)
         if (remainTime == null) return null
         val date = getNextDate(alarms)
+        val now = Calendar.getInstance().timeInMillis
+        val diffInMillies = abs(date.timeInMillis - now)
+        val diffInDays = diffInMillies / (1000 * 60 * 60 * 24)
 
         return RemainTime(
+            diffInDays.toInt(),
             date.get(Calendar.MONTH) + 1,
             date.get(Calendar.DAY_OF_MONTH),
             if (date.get(Calendar.AM_PM) == Calendar.AM) getString(R.string.am) else getString(
