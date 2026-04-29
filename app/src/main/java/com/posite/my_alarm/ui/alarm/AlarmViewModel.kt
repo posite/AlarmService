@@ -1,15 +1,12 @@
 package com.posite.my_alarm.ui.alarm
 
 import android.util.Log
-import androidx.lifecycle.viewModelScope
 import com.posite.my_alarm.data.entity.AlarmStateEntity
 import com.posite.my_alarm.data.repository.TimeRepository
 import com.posite.my_alarm.ui.base.BaseViewModel
+import com.posite.my_alarm.util.onAsyncIO
+import com.posite.my_alarm.util.onIO
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,17 +20,17 @@ class AlarmViewModel @Inject constructor(private val repository: TimeRepository)
     override fun handleEvent(event: AlarmContract.AlarmEvent) {
         when (event) {
             is AlarmContract.AlarmEvent.GetAlarmList -> {
-                viewModelScope.launch {
+                onIO {
                     repository.getAlarmStates().collect { alarms ->
                         Log.d("AlarmViewModel", "Alarms: $alarms")
                         setState { copy(alarmList = alarms) }
-                        setState { copy(minTime = calculateRemainTime(alarms)) }
+                        //setState { copy(minTime = calculateRemainTime(alarms)) }
                     }
                 }
             }
 
             is AlarmContract.AlarmEvent.GetAlarmState -> {
-                viewModelScope.launch {
+                onIO {
                     repository.getAlarmStateById(id = event.id).collect { result ->
                         result?.let { setState { copy(selectedAlarm = it) } }
                     }
@@ -41,25 +38,25 @@ class AlarmViewModel @Inject constructor(private val repository: TimeRepository)
             }
 
             is AlarmContract.AlarmEvent.InsertAlarm -> {
-                viewModelScope.launch {
-                    val coroutineScope = CoroutineScope(Dispatchers.IO)
-                    coroutineScope.async {
+                onIO {
+                    onAsyncIO {
                         repository.addAlarm(alarm = event.alarm)
                     }.await()
                     setEffect {
                         AlarmContract.AlarmEffect.ItemInserted(true, event.alarm)
                     }
                 }
+
             }
 
             is AlarmContract.AlarmEvent.UpdateAlarm -> {
-                viewModelScope.launch {
+                onIO {
                     repository.updateAlarm(alarm = event.alarm)
                 }
             }
 
             is AlarmContract.AlarmEvent.DeleteAlarm -> {
-                viewModelScope.launch {
+                onIO {
                     repository.deleteAlarms(alarm = event.alarm)
                 }
             }
